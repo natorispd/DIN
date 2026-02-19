@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Dreaming Idea Note</title>
+<script src="voice_data.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&display=swap');
+
+  :root {
+    --bg: #050508;
+    --bg2: rgba(20, 20, 28, 0.65);
+    --text: #f0f0f5;
+    --text-dim: #8b8b99;
+    --accent: #f0c040;
+    --accent-dim: #a08020;
+    --danger: #ff5555;
+    --card: rgba(255, 255, 255, 0.03);
+    --border: rgba(255, 255, 255, 0.08);
+    --glow: rgba(240, 192, 64, 0.2);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; }
+
+  body {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* === MAIN SCREEN === */
+  .main-screen {
+    position:fixed; inset:0;
+    display:flex; flex-direction:column;
+    cursor:pointer;
+    z-index:1;
+  }
+
+  /* 背景の球 */
+  .bg-orb {
+    position:fixed;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width: 65vw; height: 65vw;
+    max-width: 400px; max-height: 400px;
+    border-radius:50%;
+    background: 
+      radial-gradient(circle at 30% 30%, var(--glow) 0%, transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(100, 100, 255, 0.05) 0%, transparent 50%);
+    filter: blur(40px);
+    pointer-events:none;
+    z-index:0;
+    transition: all 1s ease;
+  }
+  .bg-orb.idle {
+    animation: orbBreath 8s ease-in-out infinite alternate;
+  }
+  .bg-orb.recording {
+    background: 
+      radial-gradient(circle at 30% 30%, rgba(240, 192, 64, 0.3) 0%, transparent 60%),
+      radial-gradient(circle at 70% 70%, rgba(255, 100, 100, 0.15) 0%, transparent 60%);
+    animation: orbPulse 3s ease-in-out infinite alternate;
+  }
+  @keyframes orbBreath {
+    0% { transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:0.5; }
+    100% { transform:translate(-50%,-50%) scale(1.1) rotate(10deg); opacity:0.8; }
+  }
+  @keyframes orbPulse {
+    0% { transform:translate(-50%,-50%) scale(1); opacity: 0.7; box-shadow: 0 0 60px rgba(240,192,64,0.1); }
+    100% { transform:translate(-50%,-50%) scale(1.15); opacity: 1; box-shadow: 0 0 100px rgba(240,192,64,0.2); }
+  }
+
+  /* 上部：合いの手 */
+  .aizuchi-area {
+    flex:0 0 auto;
+    padding:60px 24px 16px;
+    text-align:center;
+    min-height:100px;
+    position:relative;
+    z-index:2;
+  }
+  .aizuchi-text {
+    font-size:1.3rem;
+    color:#f0c040;
+    font-weight:300;
+    opacity:0;
+    transition: opacity 0.3s;
+  }
+  .aizuchi-text.show {
+    animation: aizuchiFade 2.5s ease-out forwards;
+  }
+  @keyframes aizuchiFade {
+    0% { opacity:0; transform:translateY(0); }
+    15% { opacity:1; transform:translateY(-3px); }
+    70% { opacity:1; transform:translateY(-3px); }
+    100% { opacity:0; transform:translateY(-10px); }
+  }
+
+  /* タイマー */
+  .timer {
+    position:fixed; top:20px; right:20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color:#a08020;
+    font-variant-numeric: tabular-nums;
+    background: rgba(0,0,0,0.4);
+    padding: 6px 14px;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    opacity:0; transition: opacity 0.3s;
+    z-index:3;
+  }
+  .timer.show { opacity:1; }
+
+  /* 録音インジケータ */
+  .rec-label {
+    position:fixed; top:20px; left:20px;
+    font-weight:700;
+    color:#ff5555; letter-spacing:0.1em;
+    font-size: 0.8rem;
+    background: rgba(204, 51, 51, 0.15);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(204, 51, 51, 0.3);
+    opacity:0; transition: opacity 0.3s;
+    z-index:3;
+  }
+  .rec-label.show { opacity:1; animation: recBlink 1.2s ease-in-out infinite; }
+  @keyframes recBlink {
+    0%,100% { opacity:1; }
+    50% { opacity:0.4; }
+  }
+
+  /* 中央アイコン */
+  .center-icon {
+    position:fixed;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    font-size:2.5rem;
+    color:rgba(240,192,64,0.5);
+    pointer-events:none;
+    z-index:1;
+    transition: opacity 0.4s;
+  }
+  .center-icon.dim { opacity:0.12; }
+
+  /* 中央〜下部：発話テキスト */
+  .text-area {
+    flex:1 1 auto;
+    padding:0 24px 0;
+    overflow-y:auto;
+    scrollbar-width:none;
+    position:relative;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+  }
+  .text-area::-webkit-scrollbar { display:none; }
+
+  .text-spacer {
+    flex:1 1 auto;
+  }
+
+  .live-text {
+    color:var(--text);
+    white-space:pre-wrap;
+    word-break:break-all;
+    text-align:center;
+    opacity:0;
+    transition: opacity 0.5s;
+    padding-bottom:40px;
+  }
+  .live-text.show { opacity:1; }
+
+  /* 待機時のヒント */
+  .hint {
+    text-align:center;
+    font-size:0.8rem;
+    color:var(--text-dim);
+    font-weight:300;
+    transition: opacity 0.5s;
+    padding-bottom:16px;
+  }
+  .hint.hide { opacity:0; pointer-events:none; }
+
+  /* スワイプインジケータ */
+  .swipe-hint {
+    position:fixed;
+    bottom:12px; left:50%;
+    transform:translateX(-50%);
+    width:40px; height:4px;
+    background:rgba(255,255,255,0.15);
+    border-radius:2px;
+    z-index:2;
+  }
+
+  /* === DRAWER (設定・一覧) === */
+  .drawer-overlay {
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.7);
+    z-index:100;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 0.3s;
+  }
+  .drawer-overlay.show {
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .drawer {
+    position:fixed;
+    bottom:0; left:0; right:0;
+    max-height:85dvh;
+    background:var(--bg2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    border-radius:16px 16px 0 0;
+    z-index:101;
+    transform:translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    overflow-y:auto;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .drawer.show {
+    transform:translateY(0);
+  }
+
+  .drawer-handle {
+    width:40px; height:4px;
+    background:rgba(255,255,255,0.2);
+    border-radius:2px;
+    margin:12px auto;
+  }
+
+  .drawer-tabs {
+    display:flex;
+    border-bottom:1px solid var(--border);
+    padding:0 16px;
+  }
+  .drawer-tab {
+    flex:1;
+    padding:12px 0;
+    background:none; border:none;
+    color:var(--text-dim);
+    font-family:inherit; font-size:0.8rem;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    transition: all 0.2s;
+  }
+  .drawer-tab.active {
+    color:var(--accent);
+    border-bottom-color:var(--accent);
+  }
+
+  .drawer-content { padding:16px 20px 24px; }
+  .drawer-panel { display:none; }
+  .drawer-panel.active { display:block; }
+
+  /* 一覧 */
+  .record-card {
+    background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+    cursor:pointer; 
+    transition: transform 0.2s, background 0.2s;
+  }
+  .record-card:active { 
+    transform: scale(0.98);
+    background: rgba(255,255,255,0.08);
+  }
+  .record-date { font-size:0.68rem; color:var(--text-dim); margin-bottom:5px; }
+  .record-preview {
+    font-size:0.82rem; line-height:1.6;
+    display:-webkit-box; -webkit-line-clamp:3;
+    -webkit-box-orient:vertical; overflow:hidden;
+    white-space:pre-wrap;
+  }
+  .record-empty {
+    text-align:center; color:var(--text-dim);
+    padding:40px 0; font-size:0.85rem;
+  }
+
+  /* 設定 */
+  .setting-section {
+    background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .setting-title {
+    font-size:0.75rem; font-weight:700; margin-bottom:10px;
+    color:var(--accent);
+  }
+  .setting-item { margin-bottom:10px; }
+  .setting-item:last-child { margin-bottom:0; }
+  .setting-label { font-size:0.78rem; margin-bottom:4px; }
+  .setting-desc { font-size:0.68rem; color:var(--text-dim); margin-bottom:4px; }
+  
+  input[type="number"], input[type="text"], select {
+    width:100%; 
+    padding: 12px;
+    background: rgba(0,0,0,0.4); 
+    border: 1px solid var(--border);
+    border-radius: 10px; 
+    color:var(--text);
+    font-family:inherit; font-size:0.82rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  select { appearance:none; }
+  input:focus, select:focus { 
+    outline:none; 
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(240, 192, 64, 0.2); 
+  }
+
+  .btn {
+    padding: 12px 20px; 
+    border:none; 
+    border-radius: 12px;
+    font-family:inherit; font-size:0.8rem; 
+    cursor:pointer;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  .btn:active { 
+    transform: translateY(2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    opacity: 0.9;
+  }
+  .btn-accent { 
+    background: linear-gradient(135deg, var(--accent) 0%, #d4a020 100%); 
+    color:#111; 
+  }
+  .btn-danger { background:none; border:1px solid var(--danger); color:var(--danger); }
+
+  .color-swatch {
+    width:36px; height:36px;
+    border-radius:50%;
+    cursor:pointer;
+    border:2px solid transparent;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .color-swatch:active { transform:scale(0.9); }
+  .color-swatch.selected { border-color:#fff; transform:scale(1.1); }
+
+  /* DETAIL MODAL */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.85);
+    z-index:200; display:none; align-items:flex-end;
+  }
+  .modal-overlay.show { display:flex; }
+  .modal-content {
+    background:var(--bg2); width:100%;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    max-height:85dvh; border-radius:16px 16px 0 0;
+    padding:24px 20px; overflow-y:auto;
+    padding-bottom:calc(24px + env(safe-area-inset-bottom));
+  }
+  .modal-header {
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:16px;
+  }
+  .modal-date { font-size:0.75rem; color:var(--text-dim); }
+  .modal-close {
+    background:none; border:none; color:var(--text-dim);
+    font-size:1.3rem; cursor:pointer; padding:4px 8px;
+  }
+  .modal-body {
+    font-size:0.9rem; line-height:1.8;
+    white-space:pre-wrap;
+  }
+  .modal-delete {
+    margin-top:20px; padding:10px;
+    background:none; border:1px solid var(--danger);
+    color:var(--danger); border-radius:8px;
+    width:100%; font-family:inherit; font-size:0.8rem;
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-orb idle" id="bgOrb"></div>
+
+<div class="main-screen" id="mainScreen">
+  <div class="rec-label" id="recLabel">⏺ RECORDING</div>
+  <div class="timer" id="timer">00:00</div>
+  <div class="center-icon" id="centerIcon">▶</div>
+
+  <div class="aizuchi-area">
+    <div class="aizuchi-text" id="aizuchiText"></div>
+  </div>
+
+  <div class="text-area" id="textArea">
+    <div id="textSpacer" style="flex:1 1 auto;min-height:60%"></div>
+    <div class="hint" id="hint">
+      <div style="font-size:1.1rem;margin-bottom:12px;color:var(--text);font-weight:700">Dreaming Idea Note</div>
+      <div style="line-height:2.0" id="hintText">
+        タップ：録音開始 / 停止<br>
+        スワイプ↑：設定・記録一覧
+      </div>
+    </div>
+    <div class="live-text" id="liveText"></div>
+  </div>
+  <div class="swipe-hint"></div>
+</div>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-tabs">
+    <button class="drawer-tab active" id="tab-list" onclick="switchDrawerTab('list')">📝 記録</button>
+    <button class="drawer-tab" id="tab-settings" onclick="switchDrawerTab('settings')">⚙ 設定</button>
+  </div>
+  <div class="drawer-content">
+    <div class="drawer-panel active" id="panel-list">
+      <div id="recordList"></div>
+    </div>
+    <div class="drawer-panel" id="panel-settings">
+      <div class="setting-section">
+        <div class="setting-title">🌐 言語 / Language</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn" id="langJa" style="flex:1;background:var(--accent);color:#000;font-weight:700;font-size:0.8rem;" onclick="setLang('ja')">日本語</button>
+          <button class="btn" id="langEn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.8rem;" onclick="setLang('en')">English</button>
+        </div>
+      </div>
+      <div class="setting-section">
+        <div class="setting-title" id="title-color">🎨 アクセントカラー</div>
+        <div class="setting-item">
+          <div style="display:flex;gap:10px;flex-wrap:wrap" id="colorPalette">
+            <div class="color-swatch" data-color="#f0c040" style="background:#f0c040"></div>
+            <div class="color-swatch" data-color="#ff6b6b" style="background:#ff6b6b"></div>
+            <div class="color-swatch" data-color="#51cf66" style="background:#51cf66"></div>
+            <div class="color-swatch" data-color="#339af0" style="background:#339af0"></div>
+            <div class="color-swatch" data-color="#cc5de8" style="background:#cc5de8"></div>
+            <div class="color-swatch" data-color="#ff922b" style="background:#ff922b"></div>
+            <div class="color-swatch" data-color="#20c997" style="background:#20c997"></div>
+            <div class="color-swatch" data-color="#fcc419" style="background:#fcc419"></div>
+            <div class="color-swatch" data-color="#f06595" style="background:#f06595"></div>
+            <div class="color-swatch" data-color="#e8e4df" style="background:#e8e4df"></div>
+          </div>
+        </div>
+      </div>
+      <div class="setting-section">
+        <div class="setting-title" id="title-chara">🎤 キャラクター</div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-chara">合いの手キャラ</div>
+          <div class="setting-desc" id="desc-voicedata">voice_data.js が必要です</div>
+          <select id="charSelect">
+            <option value="" id="opt-none">なし（TTS）</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-vol">音量（0〜1）</div>
+          <input type="number" id="voiceVolume" min="0" max="1" step="0.1" value="0.8">
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-delay">合いの手の遅延（秒）</div>
+          <input type="number" id="aizuchiInterval" min="0" max="60" step="1" value="0">
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-startPhrase">開始フレーズ（TTS）</div>
+          <div class="setting-desc" id="desc-startPhrase">WAVキャラ未選択時に使用</div>
+          <select id="startPhrase">
+            <option value="なぁに？">なぁに？</option>
+            <option value="聞いてるよ">聞いてるよ</option>
+            <option value="どうぞ">どうぞ</option>
+            <option value="うん？">うん？</option>
+            <option value="話して">話して</option>
+            <option value="はい">はい</option>
+            <option value="OK">OK</option>
+            <option value="Ready">Ready</option>
+          </select>
+          <div class="setting-desc" id="desc-startCustom" style="margin-top:6px;">または自由入力（こちらが優先されます）</div>
+          <input type="text" id="startPhraseCustom" placeholder="例：いいよ、どうぞ" style="margin-top:4px;">
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-endPhrase">終了フレーズ（TTS）</div>
+          <div class="setting-desc" id="desc-endPhrase">WAVキャラ未選択時に使用</div>
+          <select id="endPhrase">
+            <option value="記録しました">記録しました</option>
+            <option value="おっけーです">おっけーです</option>
+            <option value="おつかれさま">おつかれさま</option>
+            <option value="completed">completed</option>
+            <option value="ok">ok</option>
+          </select>
+          <div class="setting-desc" id="desc-endCustom" style="margin-top:6px;">または自由入力（こちらが優先されます）</div>
+          <input type="text" id="endPhraseCustom" placeholder="例：おやすみ" style="margin-top:4px;">
+        </div>
+      </div>
+      <div class="setting-section">
+        <div class="setting-title" id="title-rec">🎙 録音</div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-silence">沈黙で終了するまでの秒数</div>
+          <input type="number" id="silenceTimeout" min="10" max="120" step="5" value="30">
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-endWords">終了ワード（カンマ区切り）</div>
+          <div class="setting-desc" id="desc-endWords">この言葉を言うと録音が自動終了します</div>
+          <input type="text" id="endWords" value="おわり,以上,おしまい,終了,stop,ストップ">
+        </div>
+      </div>
+      <div class="setting-section">
+        <div class="btn btn-accent" id="btn-save" style="width:100%; text-align:center;" onclick="saveSettings()">設定を保存</div>
+      </div>
+      <div class="setting-section">
+        <div class="setting-title" id="title-export">📤 エクスポート（全件）</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportAll('json')">JSON</button>
+          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportAll('csv')">CSV</button>
+        </div>
+      </div>
+      <div class="setting-section">
+        <div class="setting-title" id="title-data">🗑 データ管理</div>
+        <div class="btn btn-danger" id="btn-clearall" style="width:100%; text-align:center;" onclick="clearAll()">テキストデータの消去</div>
+        <div class="btn btn-danger" id="btn-resetSettings" style="width:100%; margin-top:8px; text-align:center;" onclick="resetSettings()">設定をリセット</div>
+      </div>
+      <div class="setting-section">
+        <div class="setting-title" id="title-howto">ℹ 使い方</div>
+        <div class="setting-desc" id="desc-howto" style="line-height:1.9">
+          画面タップ → 録音開始/停止<br>
+          スワイプ上 → 記録一覧・設定<br><br>
+          音声認識にはインターネット接続が必要です<br>
+          ※ Chrome / Edge 推奨
+        </div>
+      </div>
+      <div class="setting-section">
+        <div class="setting-title">© クレジット</div>
+        <div id="creditText" style="font-size:0.6rem;color:var(--text-dim);line-height:1.8;">
+          音声合成：<a href="https://voicevox.hiroshiba.jp/" target="_blank" style="color:var(--accent-dim);text-decoration:none;">VOICEVOX</a><br>
+          <a href="https://voicevox.hiroshiba.jp/term/" target="_blank" style="color:var(--text-dim);text-decoration:none;">VOICEVOX 利用規約</a>
+        </div>
+      </div>
+      <div style="text-align:center;padding:8px 0 4px;font-size:0.55rem;color:var(--text-dim);opacity:0.5;">
+        Natori Satio © 2026
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-date" id="modalDate"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportSingle('txt')">TXT</button>
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportSingle('md')">Markdown</button>
+    </div>
+    <button class="modal-delete" id="modalDelete" style="margin-top:8px;">この記録を削除</button>
+  </div>
+</div>
+
+<script>
+// ============ STATE ============
+let isRecording = false;
+let recognition = null;
+let fullTranscript = '';
+let currentInterim = '';
+let timerInterval = null;
+let timerSeconds = 0;
+let aizuchiTimeout = null;
+let silenceTimer = null;
+let aizuchiSpoken = [];
+let lastAizuchi = '';
+let drawerOpen = false;
+
+// ============ AIZUCHI SYSTEM ============
+const AIZUCHI_POOL = [
+  { text:'うんうん', w:10, phase:0, pitch:1.2, rate:0.85, vol:1.0 },
+  { text:'うん', w:10, phase:0, pitch:1.2, rate:0.8, vol:0.9 },
+  { text:'ふんふん', w:8, phase:0, pitch:1.2, rate:0.85, vol:0.9 },
+  { text:'へぇ〜', w:8, phase:0, pitch:1.4, rate:0.7, vol:1.0 },
+  { text:'あー', w:8, phase:0, pitch:1.1, rate:0.7, vol:0.8 },
+  { text:'ほうほう', w:7, phase:0, pitch:1.2, rate:0.8, vol:0.9 },
+  { text:'なるほどね〜', w:4, phase:1, pitch:1.3, rate:0.8, vol:1.0 },
+  { text:'そっか〜', w:4, phase:1, pitch:1.1, rate:0.75, vol:0.9 },
+  { text:'ふぅん', w:4, phase:1, pitch:1.3, rate:0.7, vol:0.9 },
+  { text:'あ、そう', w:3, phase:1, pitch:1.3, rate:0.9, vol:1.0 },
+  { text:'そぉなんだ', w:3, phase:1, pitch:1.3, rate:0.8, vol:1.0 },
+  { text:'そうね', w:3, phase:1, pitch:1.2, rate:0.85, vol:0.9 },
+  { text:'そだね〜', w:3, phase:1, pitch:1.2, rate:0.8, vol:0.9 },
+  { text:'そうだね', w:3, phase:1, pitch:1.2, rate:0.85, vol:0.9 },
+  { text:'そうね〜', w:3, phase:1, pitch:1.2, rate:0.75, vol:0.9 },
+  { text:'おもしろい♪', w:2, phase:2, pitch:1.5, rate:1.0, vol:1.2 },
+  { text:'すごい', w:2, phase:2, pitch:1.5, rate:1.05, vol:1.2 },
+  { text:'すごいね', w:2, phase:2, pitch:1.5, rate:1.0, vol:1.2 },
+  { text:'すてき', w:1, phase:2, pitch:1.4, rate:0.9, vol:1.1 },
+  { text:'いいね〜', w:3, phase:2, pitch:1.4, rate:0.95, vol:1.1 },
+  { text:'いいじゃん', w:2, phase:2, pitch:1.4, rate:1.0, vol:1.2 },
+  { text:'たしかに', w:3, phase:1, pitch:1.2, rate:0.9, vol:1.0 },
+  { text:'わかるわかる', w:1, phase:2, pitch:1.3, rate:1.0, vol:1.1 },
+  { text:'あ〜ね', w:1, phase:2, pitch:1.3, rate:0.9, vol:1.0 },
+  { text:'だよね〜', w:2, phase:2, pitch:1.3, rate:0.85, vol:1.0 },
+];
+
+const AIZUCHI_PROMPT = ['それから？', 'それで？', '他には？', 'もっと聞きたいな'];
+
+const KEYWORD_REACTIONS = [
+  { keywords:['すごい','すげー','やばい','やばっ'], reactions:[
+    {text:'ほんとに？', pitch:1.5, rate:1.1, vol:1.2},
+    {text:'えっすごい', pitch:1.5, rate:1.05, vol:1.2},
+    {text:'まじで？', pitch:1.5, rate:1.1, vol:1.2}
+  ]},
+  { keywords:['面白','おもしろ','ウケる','うける'], reactions:[
+    {text:'おもしろい♪', pitch:1.5, rate:1.0, vol:1.2},
+    {text:'あはは', pitch:1.5, rate:1.1, vol:1.1},
+    {text:'いいね〜', pitch:1.4, rate:0.95, vol:1.1}
+  ]},
+  { keywords:['問題','難し','むずか','困っ','つらい','きつい'], reactions:[
+    {text:'そっか〜', pitch:1.1, rate:0.7, vol:0.9},
+    {text:'うーん', pitch:1.0, rate:0.65, vol:0.8},
+    {text:'なるほどね〜', pitch:1.2, rate:0.75, vol:0.9}
+  ]},
+  { keywords:['できた','思いつ','おもいつ','ひらめ','発見'], reactions:[
+    {text:'すごいね', pitch:1.5, rate:1.0, vol:1.2},
+    {text:'おー！', pitch:1.6, rate:1.1, vol:1.3},
+    {text:'いいじゃん', pitch:1.4, rate:1.0, vol:1.2}
+  ]},
+  { keywords:['欲し','ほし','したい','やりたい'], reactions:[
+    {text:'うんうん', pitch:1.2, rate:0.85, vol:1.0},
+    {text:'いいね〜', pitch:1.4, rate:0.95, vol:1.1},
+    {text:'そうだね', pitch:1.2, rate:0.85, vol:0.9}
+  ]},
+  { keywords:['でも','だけど','ただ','けど'], reactions:[
+    {text:'うん', pitch:1.2, rate:0.8, vol:0.9},
+    {text:'ふんふん', pitch:1.2, rate:0.85, vol:0.9},
+    {text:'そっか〜', pitch:1.1, rate:0.75, vol:0.9}
+  ]},
+  { keywords:['だから','なので','つまり','要は'], reactions:[
+    {text:'なるほどね〜', pitch:1.3, rate:0.8, vol:1.0},
+    {text:'うんうん', pitch:1.2, rate:0.85, vol:1.0},
+    {text:'ほうほう', pitch:1.2, rate:0.8, vol:0.9}
+  ]},
+  { keywords:['新し','あたらし','初めて','はじめて'], reactions:[
+    {text:'へぇ〜', pitch:1.5, rate:0.75, vol:1.1},
+    {text:'おもしろい♪', pitch:1.5, rate:1.0, vol:1.2},
+    {text:'いいね〜', pitch:1.4, rate:0.95, vol:1.1}
+  ]},
+  { keywords:['売れ','うれ','お金','儲','もうか','利益'], reactions:[
+    {text:'すごい', pitch:1.5, rate:1.05, vol:1.2},
+    {text:'いいじゃん', pitch:1.4, rate:1.0, vol:1.2},
+    {text:'ほんとに？', pitch:1.5, rate:1.1, vol:1.2}
+  ]},
+  { keywords:['お客','きゃく','ユーザー','使う人'], reactions:[
+    {text:'うんうん', pitch:1.2, rate:0.85, vol:1.0},
+    {text:'なるほどね〜', pitch:1.3, rate:0.8, vol:1.0},
+    {text:'そうだね', pitch:1.2, rate:0.85, vol:0.9}
+  ]},
+  { keywords:['マスク','シリコン','変身'], reactions:[
+    {text:'うんうん', pitch:1.2, rate:0.85, vol:1.0},
+    {text:'なるほどね〜', pitch:1.3, rate:0.8, vol:1.0},
+    {text:'ふんふん', pitch:1.2, rate:0.85, vol:0.9}
+  ]},
+  { keywords:['かわいい','きれい','美し','うつくし'], reactions:[
+    {text:'すてき', pitch:1.4, rate:0.9, vol:1.1},
+    {text:'いいね〜', pitch:1.4, rate:0.95, vol:1.1},
+    {text:'わかるわかる', pitch:1.3, rate:1.0, vol:1.1}
+  ]},
+  { keywords:['怖','こわ','不安','心配'], reactions:[
+    {text:'そっか〜', pitch:1.1, rate:0.7, vol:0.9},
+    {text:'だよね〜', pitch:1.2, rate:0.75, vol:0.9},
+    {text:'うん', pitch:1.1, rate:0.75, vol:0.8}
+  ]},
+  { keywords:['嬉し','うれし','楽し','たのし'], reactions:[
+    {text:'いいね〜', pitch:1.4, rate:0.95, vol:1.1},
+    {text:'わかるわかる', pitch:1.3, rate:1.0, vol:1.1},
+    {text:'すてき', pitch:1.4, rate:0.9, vol:1.1}
+  ]},
+  { keywords:['ミラー','鏡','カメラ'], reactions:[
+    {text:'ふんふん', pitch:1.2, rate:0.85, vol:0.9},
+    {text:'うんうん', pitch:1.2, rate:0.85, vol:1.0},
+    {text:'なるほどね〜', pitch:1.3, rate:0.8, vol:1.0}
+  ]},
+  { keywords:['AI','エーアイ','人工知能'], reactions:[
+    {text:'へぇ〜', pitch:1.5, rate:0.75, vol:1.1},
+    {text:'ほうほう', pitch:1.3, rate:0.85, vol:1.0},
+    {text:'おもしろい♪', pitch:1.5, rate:1.0, vol:1.2}
+  ]},
+];
+
+function getCurrentPhase() {
+  const textLen = fullTranscript.length;
+  let timePhase = timerSeconds >= 180 ? 2 : timerSeconds >= 60 ? 1 : 0;
+  let textPhase = textLen >= 400 ? 2 : textLen >= 100 ? 1 : 0;
+  return Math.max(timePhase, textPhase);
+}
+
+function weightedRandom(pool) {
+  const totalW = pool.reduce((s, a) => s + a.w, 0);
+  let r = Math.random() * totalW;
+  for (const a of pool) { r -= a.w; if (r <= 0) return a; }
+  return pool[0];
+}
+
+function extractNoun(text) {
+  const recent = text.slice(-50);
+  const kata = recent.match(/[ァ-ヶー]{3,}/g);
+  if (kata && kata.length > 0) return kata[kata.length - 1] + '…';
+  const kanji = recent.match(/[一-龥]{2,}/g);
+  if (kanji && kanji.length > 0) return kanji[kanji.length - 1] + '…';
+  return null;
+}
+
+function checkKeywordReaction(text) {
+  const recent = text.slice(-60);
+  for (const rule of KEYWORD_REACTIONS) {
+    for (const kw of rule.keywords) {
+      if (recent.includes(kw)) {
+        return rule.reactions[Math.floor(Math.random() * rule.reactions.length)];
+      }
+    }
+  }
+  return null;
+}
+
+function pickAizuchi() {
+  const text = fullTranscript + currentInterim;
+  const phase = getCurrentPhase();
+
+  if (text.length > 10 && Math.random() < 0.2) {
+    const noun = extractNoun(text);
+    if (noun && noun !== lastAizuchi) {
+      lastAizuchi = noun;
+      return { text:noun, pitch:1.2, rate:0.75, vol:0.9 };
+    }
+  }
+
+  if (text.length > 10 && phase >= 1 && Math.random() < 0.3) {
+    const reaction = checkKeywordReaction(text);
+    if (reaction && reaction.text !== lastAizuchi) {
+      lastAizuchi = reaction.text;
+      return reaction;
+    }
+  }
+
+  if (text.length > 10 && phase === 0 && Math.random() < 0.15) {
+    const reaction = checkKeywordReaction(text);
+    if (reaction && reaction.text !== lastAizuchi) {
+      lastAizuchi = reaction.text;
+      return { text:reaction.text, pitch:1.2, rate:0.8, vol:0.85 };
+    }
+  }
+
+  const available = AIZUCHI_POOL.filter(a => a.phase <= phase);
+  let pick, attempts = 0;
+  do { pick = weightedRandom(available); attempts++; }
+  while (pick.text === lastAizuchi && attempts < 5);
+  lastAizuchi = pick.text;
+  return pick;
+}
+
+// ============ TOUCH / SWIPE / MOUSE ============
+let touchStartY = 0;
+let touchStartTime = 0;
+
+// タッチ（スマホ）
+document.getElementById('mainScreen').addEventListener('touchstart', (e) => {
+  if (drawerOpen) return;
+  touchStartY = e.touches[0].clientY;
+  touchStartTime = Date.now();
+}, { passive:true });
+
+document.getElementById('mainScreen').addEventListener('touchmove', (e) => {
+  if (drawerOpen) return;
+  // 録音中はテキストエリアをスクロール
+  if (isRecording) {
+    const dy = touchStartY - e.touches[0].clientY;
+    const el = document.getElementById('textArea');
+    el.scrollTop += dy * 0.5;
+    touchStartY = e.touches[0].clientY;
+  }
+}, { passive:true });
+
+document.getElementById('mainScreen').addEventListener('touchend', (e) => {
+  if (drawerOpen) return;
+  const dy = touchStartY - e.changedTouches[0].clientY;
+  const dt = Date.now() - touchStartTime;
+
+  // 録音中のスワイプはスクロール済みなので、タップのみ処理
+  if (isRecording) {
+    if (Math.abs(dy) < 20) toggleRecording();
+    return;
+  }
+
+  // 非録音時：スワイプ上→ドロワー、タップ→録音開始
+  if (dy > 50 && dt < 500) { openDrawer(); return; }
+  if (Math.abs(dy) < 20) toggleRecording();
+}, { passive:true });
+
+// マウスクリック（PC）
+document.getElementById('mainScreen').addEventListener('click', (e) => {
+  if (drawerOpen) return;
+  if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+  toggleRecording();
+});
+
+// マウスホイール（PC）
+document.getElementById('mainScreen').addEventListener('wheel', (e) => {
+  if (drawerOpen) return;
+  // 録音中はテキストスクロール
+  if (isRecording) {
+    e.preventDefault();
+    const el = document.getElementById('textArea');
+    el.scrollBy(0, e.deltaY);
+    return;
+  }
+  // 非録音時：上スクロールでドロワー
+  if (e.deltaY < -30) { openDrawer(); }
+}, { passive:false });
+
+// ============ DRAWER ============
+function openDrawer() {
+  drawerOpen = true;
+  document.getElementById('drawerOverlay').classList.add('show');
+  document.getElementById('drawer').classList.add('show');
+  renderList();
+}
+
+function closeDrawer() {
+  drawerOpen = false;
+  document.getElementById('drawerOverlay').classList.remove('show');
+  document.getElementById('drawer').classList.remove('show');
+}
+
+function switchDrawerTab(name) {
+  document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.drawer-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'list') renderList();
+}
+
+// ============ SETTINGS ============
+function loadSettings() {
+  const s = JSON.parse(localStorage.getItem('igt_settings') || '{}');
+  document.getElementById('voiceVolume').value = s.volume ?? 0.8;
+  document.getElementById('aizuchiInterval').value = s.interval ?? 0;
+  document.getElementById('silenceTimeout').value = s.silence ?? 30;
+  document.getElementById('endWords').value = s.endWords ?? 'おわり,以上,おしまい,終了,stop,ストップ';
+  if (s.charName !== undefined) document.getElementById('charSelect').value = s.charName;
+  else document.getElementById('charSelect').value = '__silent__';
+  if (s.startPhrase) {
+    const sel = document.getElementById('startPhrase');
+    const opt = [...sel.options].find(o => o.value === s.startPhrase);
+    if (opt) { sel.value = s.startPhrase; }
+    else { document.getElementById('startPhraseCustom').value = s.startPhrase; }
+  }
+  if (s.endPhrase) {
+    const sel = document.getElementById('endPhrase');
+    const opt = [...sel.options].find(o => o.value === s.endPhrase);
+    if (opt) { sel.value = s.endPhrase; }
+    else { document.getElementById('endPhraseCustom').value = s.endPhrase; }
+  }
+  if (s.lang) setLang(s.lang);
+}
+
+function saveSettings() {
+  const selectedSwatch = document.querySelector('.color-swatch.selected');
+  const s = {
+    volume: parseFloat(document.getElementById('voiceVolume').value),
+    interval: parseInt(document.getElementById('aizuchiInterval').value),
+    silence: parseInt(document.getElementById('silenceTimeout').value),
+    charName: document.getElementById('charSelect').value,
+    startPhrase: document.getElementById('startPhraseCustom').value.trim() || document.getElementById('startPhrase').value,
+    endPhrase: document.getElementById('endPhraseCustom').value.trim() || document.getElementById('endPhrase').value,
+    accentColor: selectedSwatch ? selectedSwatch.dataset.color : '#f0c040',
+    endWords: document.getElementById('endWords').value.trim()
+  };
+  localStorage.setItem('igt_settings', JSON.stringify(s));
+  alert('保存しました');
+}
+
+function getSettings() {
+  return JSON.parse(localStorage.getItem('igt_settings') || '{}');
+}
+
+// ============ VOICE / CHARACTER ============
+// キャラ別WAVマップ: { charName: { start:key, end:key, prompt:[keys], aizuchi:[keys] } }
+let CHAR_MAP = {};
+
+function buildCharMap() {
+  if (!window.VOICE_DATA) return;
+  const allKeys = Object.keys(window.VOICE_DATA);
+  // キー形式: 番号_キャラ名_セリフ
+  allKeys.forEach(k => {
+    const m = k.match(/^\d+_(.+?)_(.+)$/);
+    if (!m) return;
+    const [, char, line] = m;
+    if (!CHAR_MAP[char]) CHAR_MAP[char] = { start:null, end:null, prompt:[], aizuchi:[] };
+    // 開始・終了は各キャラの1番目・2番目のキー
+    if (!CHAR_MAP[char].start) { CHAR_MAP[char].start = k; return; }
+    if (!CHAR_MAP[char].end) { CHAR_MAP[char].end = k; return; }
+    // 「続きは」「それで」「どうなる」系はプロンプト
+    if (/続き|それで|どげん|どない|どうなる/.test(line)) {
+      CHAR_MAP[char].prompt.push(k);
+    } else {
+      CHAR_MAP[char].aizuchi.push(k);
+    }
+  });
+}
+
+function populateChars() {
+  buildCharMap();
+  const sel = document.getElementById('charSelect');
+  sel.innerHTML = '<option value="" id="opt-none">なし（TTS）</option>'
+    + '<option value="__silent__" id="opt-silent">無音（テキストのみ）</option>';
+  Object.keys(CHAR_MAP).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  const s = getSettings();
+  sel.value = (s.charName !== undefined) ? s.charName : '__silent__';
+  // クレジット動的更新
+  const charNames = Object.keys(CHAR_MAP);
+  if (charNames.length > 0) {
+    const el = document.getElementById('creditText');
+    if (el) {
+      el.innerHTML = `音声合成：<a href="https://voicevox.hiroshiba.jp/" target="_blank" style="color:var(--accent-dim);text-decoration:none;">VOICEVOX</a>／${charNames.join('／')}<br><a href="https://voicevox.hiroshiba.jp/term/" target="_blank" style="color:var(--text-dim);text-decoration:none;">VOICEVOX 利用規約</a>`;
+    }
+  }
+}
+window.addEventListener('load', () => {
+  populateChars();
+  loadSettings();
+  initColorPalette();
+});
+
+// ============ RECORDING ============
+function toggleRecording() {
+  if (isRecording) stopRecording();
+  else startRecording();
+}
+
+function startRecording() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('このブラウザは音声認識に対応していません');
+    return;
+  }
+
+  isRecording = true;
+  fullTranscript = '';
+  currentInterim = '';
+  aizuchiSpoken = [];
+  lastAizuchi = '';
+  timerSeconds = 0;
+
+  document.getElementById('bgOrb').className = 'bg-orb recording';
+  document.getElementById('timer').classList.add('show');
+  document.getElementById('recLabel').classList.add('show');
+  document.getElementById('centerIcon').textContent = '■';
+  document.getElementById('centerIcon').classList.add('dim');
+  document.getElementById('liveText').classList.add('show');
+  document.getElementById('hint').classList.add('hide');
+  document.getElementById('liveText').textContent = '';
+
+  const startPhrase = getSettings().startPhrase || 'なぁに？';
+  showAizuchi(startPhrase);
+  speakAizuchi(startPhrase, { pitch:1.3, rate:0.75, vol:1.0 }, 'start');
+  aizuchiSpoken.push(startPhrase);
+
+  startTimer();
+  startRecognition();
+}
+
+function stopRecording() {
+  isRecording = false;
+
+  stopTimer();
+  if (recognition) {
+    recognition.onend = null;
+    recognition.abort();
+    recognition = null;
+  }
+  clearTimeout(aizuchiTimeout);
+  clearTimeout(silenceTimer);
+
+  let cleaned = cleanTranscript(fullTranscript);
+  cleaned = cleaned.trim();
+  if (cleaned.length > 0) saveRecord(cleaned);
+
+  const endPhrase = getSettings().endPhrase || '記録しました';
+  showAizuchi(endPhrase);
+  speakAizuchi(endPhrase, { pitch:1.3, rate:0.8, vol:1.0 }, 'end');
+
+  setTimeout(() => {
+    document.getElementById('bgOrb').className = 'bg-orb idle';
+    document.getElementById('timer').classList.remove('show');
+    document.getElementById('recLabel').classList.remove('show');
+    document.getElementById('centerIcon').textContent = '▶';
+    document.getElementById('centerIcon').classList.remove('dim');
+    document.getElementById('liveText').classList.remove('show');
+    document.getElementById('hint').classList.remove('hide');
+    document.getElementById('liveText').textContent = '';
+  }, 2500);
+}
+
+function cleanTranscript(text) {
+  let result = text;
+  for (const q of aizuchiSpoken) {
+    result = result.replace(q, ' ');
+    const noP = q.replace(/[、。？！?!♪〜～…]/g, '');
+    if (noP !== q && noP.length > 0) result = result.replace(noP, ' ');
+  }
+  result = result.replace(/[ \t]{2,}/g, ' ');
+  // 空行を除去
+  result = result.split('\n').filter(l => l.trim().length > 0).join('\n');
+  return result;
+}
+
+// ============ SPEECH RECOGNITION ============
+function startRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'ja-JP';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onresult = (e) => {
+    resetSilenceTimer();
+    let interim = '';
+    let final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    if (final) {
+      // 終了ワードチェック
+      if (checkEndWord(final)) {
+        // 終了ワード自体は記録から除外
+        stopRecording();
+        return;
+      }
+      fullTranscript += final + '\n';
+      triggerAizuchi();
+    }
+    currentInterim = interim;
+    updateLiveText();
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === 'no-speech' || e.error === 'aborted') return;
+  };
+
+  recognition.onend = () => {
+    if (isRecording) { try { recognition.start(); } catch(e) {} }
+  };
+
+  recognition.start();
+  resetSilenceTimer();
+}
+
+let currentAccentColor = '#f0c040';
+
+function updateLiveText() {
+  const el = document.getElementById('liveText');
+  const area = document.getElementById('textArea');
+  const lines = (fullTranscript + currentInterim).split('\n').filter(l => l.trim());
+  
+  if (lines.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+
+  const total = lines.length;
+  let html = '';
+  for (let i = 0; i < total; i++) {
+    const distFromEnd = total - 1 - i;
+    const size = Math.max(0.65, 1.15 - distFromEnd * 0.06);
+    const lh = Math.max(1.2, 2.0 - distFromEnd * 0.08);
+    const isLast = distFromEnd === 0;
+    const weight = isLast ? 'font-weight:700;' : '';
+    const color = isLast ? `color:${currentAccentColor};` : '';
+    html += `<div class="tt-line" style="font-size:${size}rem;line-height:${lh};${weight}${color}">${escapeHtml(lines[i])}</div>`;
+  }
+
+  el.innerHTML = html;
+  area.scrollTop = area.scrollHeight;
+}
+
+// スクロール時は表示位置基準で再計算
+function applyTextGradient() {
+  const area = document.getElementById('textArea');
+  const divs = area.querySelectorAll('.tt-line');
+  if (divs.length === 0) return;
+
+  const areaRect = area.getBoundingClientRect();
+  const areaBottom = areaRect.bottom;
+  const areaHeight = areaRect.height;
+
+  // 画面内で一番下にある行を見つける
+  let bottomIdx = -1;
+  let maxBottom = -Infinity;
+  divs.forEach((d, i) => {
+    const r = d.getBoundingClientRect();
+    if (r.bottom <= areaBottom && r.bottom > maxBottom) {
+      maxBottom = r.bottom;
+      bottomIdx = i;
+    }
+  });
+
+  divs.forEach((d, i) => {
+    const distFromVisible = Math.max(0, bottomIdx - i);
+    const size = Math.max(0.65, 1.15 - distFromVisible * 0.06);
+    const lh = Math.max(1.2, 2.0 - distFromVisible * 0.08);
+    const isBottom = i === bottomIdx;
+
+    d.style.fontSize = size + 'rem';
+    d.style.lineHeight = lh;
+    d.style.fontWeight = isBottom ? '700' : '400';
+    d.style.color = isBottom ? currentAccentColor : '#e8e4df';
+  });
+}
+
+document.getElementById('textArea').addEventListener('scroll', () => {
+  requestAnimationFrame(applyTextGradient);
+});
+
+// ============ END WORD DETECTION ============
+// 表記ゆれ対応マップ
+const END_WORD_VARIANTS = {
+  'おわり': ['おわり','終わり','終わった','おわった'],
+  'おしまい': ['おしまい','お終い'],
+  '終了': ['終了'],
+  '以上': ['以上'],
+  'stop': ['stop','Stop','STOP'],
+  'ストップ': ['ストップ'],
+};
+
+function checkEndWord(text) {
+  const s = getSettings();
+  const words = (s.endWords || 'おわり,以上,おしまい,終了,stop,ストップ').split(',').map(w => w.trim()).filter(w => w);
+  const cleaned = text.trim().toLowerCase();
+  for (const w of words) {
+    const wl = w.toLowerCase();
+    // 登録ワードそのもの（大文字小文字無視・前後一致）
+    if (cleaned === wl || cleaned.endsWith(wl) || cleaned.includes(wl)) return true;
+    // 表記ゆれ展開
+    const variants = END_WORD_VARIANTS[w] || [];
+    for (const v of variants) {
+      const vl = v.toLowerCase();
+      if (cleaned === vl || cleaned.endsWith(vl) || cleaned.includes(vl)) return true;
+    }
+  }
+  return false;
+}
+
+// ============ SILENCE DETECTION ============
+function resetSilenceTimer() {
+  clearTimeout(silenceTimer);
+  const s = getSettings();
+  const timeout = (s.silence || 30) * 1000;
+  silenceTimer = setTimeout(() => {
+    if (!isRecording) return;
+    const prompt = AIZUCHI_PROMPT[Math.floor(Math.random() * AIZUCHI_PROMPT.length)];
+    showAizuchi(prompt);
+    speakAizuchi(prompt, { pitch:1.3, rate:0.8, vol:1.0 }, 'prompt');
+    aizuchiSpoken.push(prompt);
+    silenceTimer = setTimeout(() => {
+      if (isRecording) stopRecording();
+    }, timeout);
+  }, timeout);
+}
+
+// ============ AIZUCHI TRIGGER ============
+let aizuchiCooldown = false;
+
+function triggerAizuchi() {
+  if (!isRecording || aizuchiCooldown) return;
+  const s = getSettings();
+  const delay = (s.interval || 0) * 1000;
+
+  aizuchiCooldown = true;
+  clearTimeout(aizuchiTimeout);
+
+  aizuchiTimeout = setTimeout(() => {
+    if (!isRecording) return;
+    const aizuchi = pickAizuchi();
+    aizuchiSpoken.push(aizuchi.text);
+    showAizuchi(aizuchi.text);
+    speakAizuchi(aizuchi.text, aizuchi, 'aizuchi');
+    setTimeout(() => { aizuchiCooldown = false; }, 1500);
+  }, delay);
+}
+
+function showAizuchi(text) {
+  const el = document.getElementById('aizuchiText');
+  el.textContent = text;
+  el.className = 'aizuchi-text';
+  void el.offsetWidth;
+  el.className = 'aizuchi-text show';
+}
+
+function getCurrentChar() {
+  const s = getSettings();
+  return s.charName || document.getElementById('charSelect').value || '';
+}
+
+function playWav(key) {
+  const s = getSettings();
+  const audio = new Audio(window.VOICE_DATA[key]);
+  audio.volume = Math.min(1.0, s.volume ?? 0.8);
+  audio.play().catch(()=>{});
+}
+
+// type: 'start' | 'end' | 'prompt' | 'aizuchi'
+function speakAizuchi(text, emotionParams, type) {
+  const charName = getCurrentChar();
+
+  // 無音モード：開始・終了のみ発話、それ以外はテキスト表示のみ
+  if (charName === '__silent__') {
+    if (type !== 'start' && type !== 'end') return;
+    // start/end はTTSフォールバックへ落ちる
+  }
+
+  if (charName && window.VOICE_DATA && CHAR_MAP[charName]) {
+    const cm = CHAR_MAP[charName];
+    let key = null;
+    if (type === 'start' && cm.start) {
+      key = cm.start;
+    } else if (type === 'end' && cm.end) {
+      key = cm.end;
+    } else if (type === 'prompt' && cm.prompt.length > 0) {
+      key = cm.prompt[Math.floor(Math.random() * cm.prompt.length)];
+    } else if (cm.aizuchi.length > 0) {
+      key = cm.aizuchi[Math.floor(Math.random() * cm.aizuchi.length)];
+    }
+    if (key) {
+      // WAVキーからセリフ部分を抽出して表示
+      const wavText = key.replace(/^\d+_.+?_/, '');
+      showAizuchi(wavText);
+      playWav(key);
+      return;
+    }
+  }
+
+  // フォールバック: TTS
+  const cleanText = text.replace(/[♪…]/g, '');
+  const utter = new SpeechSynthesisUtterance(cleanText);
+  utter.lang = 'ja-JP';
+  const ep = emotionParams || {};
+  utter.volume = Math.min(1.0, (getSettings().volume ?? 0.8) * (ep.vol || 1.0));
+  utter.rate = ep.rate || 0.85;
+  utter.pitch = ep.pitch || 1.3;
+  const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+  if (voices.length > 0) utter.voice = voices[0];
+  speechSynthesis.speak(utter);
+}
+
+// ============ TIMER ============
+function startTimer() {
+  timerSeconds = 0;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => { timerSeconds++; updateTimerDisplay(); }, 1000);
+}
+function stopTimer() { clearInterval(timerInterval); }
+function updateTimerDisplay() {
+  const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+  const s = String(timerSeconds % 60).padStart(2, '0');
+  document.getElementById('timer').textContent = `${m}:${s}`;
+}
+
+// ============ STORAGE ============
+function getRecords() { return JSON.parse(localStorage.getItem('igt_records') || '[]'); }
+function saveRecord(text) {
+  const records = getRecords();
+  records.unshift({ id:Date.now(), date:new Date().toISOString(), text, duration:timerSeconds });
+  localStorage.setItem('igt_records', JSON.stringify(records));
+}
+function deleteRecord(id) {
+  let records = getRecords().filter(r => r.id !== id);
+  localStorage.setItem('igt_records', JSON.stringify(records));
+}
+function clearAll() {
+  if (confirm('すべての記録を削除しますか？')) {
+    localStorage.removeItem('igt_records');
+    renderList();
+    alert('削除しました');
+  }
+}
+
+// ============ LIST ============
+function renderList() {
+  const el = document.getElementById('recordList');
+  const records = getRecords();
+  if (records.length === 0) {
+    el.innerHTML = '<div class="record-empty">まだ記録がありません</div>';
+    return;
+  }
+  el.innerHTML = records.map(r => {
+    const d = new Date(r.date);
+    const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const dur = r.duration ? ` (${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,'0')})` : '';
+    return `<div class="record-card" onclick="openModal(${r.id})">
+      <div class="record-date">${dateStr}${dur}</div>
+      <div class="record-preview">${escapeHtml(r.text)}</div>
+    </div>`;
+  }).join('');
+}
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ============ MODAL ============
+function openModal(id) {
+  const r = getRecords().find(r => r.id === id);
+  if (!r) return;
+  const d = new Date(r.date);
+  document.getElementById('modalDate').textContent =
+    `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('modalBody').textContent = r.text;
+  document.getElementById('modalDelete').onclick = () => {
+    if (confirm('削除しますか？')) { deleteRecord(id); closeModal(); renderList(); }
+  };
+  currentModalId = id;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+// ============ EXPORT ============
+let currentModalId = null;
+
+function downloadFile(filename, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function exportSingle(fmt) {
+  const r = getRecords().find(r => r.id === currentModalId);
+  if (!r) return;
+  const date = formatDate(r.date);
+  const slug = date.replace(/[: ]/g, '-');
+  if (fmt === 'txt') {
+    downloadFile(`igt_${slug}.txt`, `${date}\n\n${r.text}`, 'text/plain');
+  } else if (fmt === 'md') {
+    const dur = r.duration ? `${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,'0')}` : '';
+    downloadFile(`igt_${slug}.md`, `# ${date}${dur ? ' ('+dur+')' : ''}\n\n${r.text}\n`, 'text/markdown');
+  }
+}
+
+function exportAll(fmt) {
+  const records = getRecords();
+  if (records.length === 0) { alert('記録がありません'); return; }
+  const ts = new Date().toISOString().slice(0,10);
+  if (fmt === 'json') {
+    downloadFile(`igt_all_${ts}.json`, JSON.stringify(records, null, 2), 'application/json');
+  } else if (fmt === 'csv') {
+    const header = 'id,date,duration,text';
+    const rows = records.map(r => {
+      const text = '"' + r.text.replace(/"/g, '""').replace(/\n/g, ' ') + '"';
+      return `${r.id},${r.date},${r.duration||0},${text}`;
+    });
+    downloadFile(`igt_all_${ts}.csv`, [header, ...rows].join('\n'), 'text/csv');
+  }
+}
+
+// ============ INIT ============
+// loadSettings・initColorPaletteはwindow.onload内で呼ぶ
+// （populateCharsの後に実行が必要なため）
+
+// ブラウザ閉じる時に録音中なら自動保存
+window.addEventListener('beforeunload', () => {
+  if (isRecording) {
+    let cleaned = cleanTranscript(fullTranscript).trim();
+    if (cleaned.length > 0) saveRecord(cleaned);
+  }
+});
+
+// カラーパレット初期化
+function initColorPalette() {
+  const s = getSettings();
+  const current = s.accentColor || '#f0c040';
+  currentAccentColor = current;
+  applyAccentColor(current);
+  document.querySelectorAll('.color-swatch').forEach(sw => {
+    if (sw.dataset.color === current) sw.classList.add('selected');
+    sw.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+      applyAccentColor(sw.dataset.color);
+    });
+  });
+}
+
+function applyAccentColor(color) {
+  currentAccentColor = color;
+  document.documentElement.style.setProperty('--accent', color);
+  const r = parseInt(color.slice(1,3),16);
+  const g = parseInt(color.slice(3,5),16);
+  const b = parseInt(color.slice(5,7),16);
+  document.documentElement.style.setProperty('--accent-dim',
+    `rgb(${Math.floor(r*0.6)},${Math.floor(g*0.6)},${Math.floor(b*0.6)})`);
+  // 録音中なら即反映
+  if (isRecording) requestAnimationFrame(applyTextGradient);
+}
+
+// ============ I18N ============
+const I18N = {
+  ja: {
+    hintText: 'タップ：録音開始 / 停止<br>スワイプ↑：設定・記録一覧',
+    'tab-list': '📝 記録',
+    'tab-settings': '⚙ 設定',
+    'title-color': '🎨 アクセントカラー',
+    'title-chara': '🎤 キャラクター',
+    'label-chara': '合いの手キャラ',
+    'opt-none': 'なし（TTS）',
+    'opt-silent': '無音（テキストのみ）',
+    'label-vol': '音量（0〜1）',
+    'label-delay': '合いの手の遅延（秒）',
+    'label-startPhrase': '開始フレーズ（TTS）',
+    'desc-startPhrase': 'WAVキャラ未選択時に使用',
+    'desc-startCustom': 'または自由入力（こちらが優先されます）',
+    'label-endPhrase': '終了フレーズ（TTS）',
+    'desc-endPhrase': 'WAVキャラ未選択時に使用',
+    'desc-endCustom': 'または自由入力（こちらが優先されます）',
+    'title-rec': '🎙 録音',
+    'label-silence': '沈黙で終了するまでの秒数',
+    'label-endWords': '終了ワード（カンマ区切り）',
+    'desc-endWords': 'この言葉を言うと録音が自動終了します',
+    'btn-save': '設定を保存',
+    'title-export': '📤 エクスポート（全件）',
+    'title-data': '🗑 データ',
+    'btn-clearall': 'テキストデータの消去',
+    'title-data': '🗑 データ管理',
+    'btn-resetSettings': '設定をリセット',
+    'title-howto': 'ℹ 使い方',
+    'desc-howto': '画面タップ → 録音開始/停止<br>スワイプ上 → 記録一覧・設定<br><br>音声認識にはインターネット接続が必要です<br>※ Chrome / Edge 推奨',
+    'desc-voicedata': 'voice_data.js が必要です',
+    modalDelete: 'この記録を削除',
+  },
+  en: {
+    hintText: 'Tap: Start / Stop recording<br>Swipe up: Settings & records',
+    'tab-list': '📝 Records',
+    'tab-settings': '⚙ Settings',
+    'title-color': '🎨 Accent Color',
+    'title-chara': '🎤 Character',
+    'label-chara': 'Response Character',
+    'opt-none': 'None (TTS)',
+    'opt-silent': 'Silent (text only)',
+    'label-vol': 'Volume (0–1)',
+    'label-delay': 'Response delay (sec)',
+    'label-startPhrase': 'Start phrase (TTS)',
+    'desc-startPhrase': 'Used when no WAV character is selected',
+    'desc-startCustom': 'Custom input (takes priority)',
+    'label-endPhrase': 'End phrase (TTS)',
+    'desc-endPhrase': 'Used when no WAV character is selected',
+    'desc-endCustom': 'Custom input (takes priority)',
+    'title-rec': '🎙 Recording',
+    'label-silence': 'Silence timeout (sec)',
+    'label-endWords': 'Stop words (comma separated)',
+    'desc-endWords': 'Say these words to stop recording automatically',
+    'btn-save': 'Save Settings',
+    'title-export': '📤 Export (all records)',
+    'title-data': '🗑 Data',
+    'btn-clearall': 'Clear all text records',
+    'title-data': '🗑 Data',
+    'btn-resetSettings': 'Reset settings',
+    'title-howto': 'ℹ How to Use',
+    'desc-howto': 'Tap → Start / Stop recording<br>Swipe up → Records & settings<br><br>Internet connection required for speech recognition<br>※ Chrome / Edge recommended',
+    'desc-voicedata': 'voice_data.js required',
+    modalDelete: 'Delete this record',
+  }
+};
+
+let currentLang = 'ja';
+
+function setLang(lang) {
+  currentLang = lang;
+  const d = I18N[lang];
+  // hintText
+  document.getElementById('hintText').innerHTML = d.hintText;
+  // modalDelete
+  const md = document.getElementById('modalDelete');
+  if (md) md.textContent = d.modalDelete;
+  // その他id
+  Object.keys(d).forEach(id => {
+    if (id === 'hintText' || id === 'modalDelete') return;
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = d[id];
+  });
+  // ボタン色更新
+  document.getElementById('langJa').style.background = lang === 'ja' ? 'var(--accent)' : 'rgba(255,255,255,0.07)';
+  document.getElementById('langJa').style.color = lang === 'ja' ? '#000' : 'var(--text)';
+  document.getElementById('langJa').style.fontWeight = lang === 'ja' ? '700' : '400';
+  document.getElementById('langEn').style.background = lang === 'en' ? 'var(--accent)' : 'rgba(255,255,255,0.07)';
+  document.getElementById('langEn').style.color = lang === 'en' ? '#000' : 'var(--text)';
+  document.getElementById('langEn').style.fontWeight = lang === 'en' ? '700' : '400';
+  // 設定に保存
+  const s = getSettings();
+  s.lang = lang;
+  localStorage.setItem('igt_settings', JSON.stringify(s));
+}
+
+</script>
+</body>
+</html>
