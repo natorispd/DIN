@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G-DIN (Continuous Mode)</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background-color: #f0f0f0; }
+        #status { color: #666; margin-bottom: 20px; }
+        #output { border: 1px solid #ccc; padding: 20px; width: 80%; margin: 0 auto; min-height: 100px; background: white; }
+        .icon { width: 100px; height: 100px; margin-bottom: 20px; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <img src="./Gemini_Generated_Image_vhme4vhme4vhme4v.jpg" class="icon" alt="Icon">
+
+    <h1>G-DIN</h1>
+    <div id="status">音声認識中...</div>
+    <div id="output">ここに認識結果が表示されます</div>
+
+    <script>
+        const output = document.getElementById('output');
+        const status = document.getElementById('status');
+
+        // 自声フィルタリング用フラグ
+        let isSpeaking = false;
+
+        // 音声認識の設定
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ja-JP';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        // 合成音声の設定
+        const synth = window.speechSynthesis;
+
+        // あいづち関数
+        function speakBack(text) {
+            const uttr = new SpeechSynthesisUtterance("なるほど、" + text + "、ですね。");
+            
+            uttr.onstart = () => {
+                isSpeaking = true; // 喋り始めたら認識を無視
+                status.innerText = "応答中...";
+            };
+            uttr.onend = () => {
+                isSpeaking = false; // 喋り終わったら認識再開
+                status.innerText = "音声認識中...";
+            };
+            
+            synth.speak(uttr);
+        }
+
+        recognition.onresult = (event) => {
+            if (isSpeaking) return; // 自分が喋っている間は処理しない
+
+            const last = event.results.length - 1;
+            const text = event.results[last][0].transcript;
+
+            output.innerText = text;
+            speakBack(text); // 応答を実行
+        };
+
+        // エラーまたは自動停止時の再起動処理
+        recognition.onend = () => {
+            // 意図せぬ停止時のみ再起動することで、起動音の回数を最小限にする
+            recognition.start();
+        };
+
+        // 初回起動
+        recognition.start();
+    </script>
+</body>
+</html>
