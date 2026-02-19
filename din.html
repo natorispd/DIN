@@ -812,7 +812,8 @@ function loadSettings() {
   document.getElementById('aizuchiInterval').value = s.interval ?? 0;
   document.getElementById('silenceTimeout').value = s.silence ?? 30;
   document.getElementById('endWords').value = s.endWords ?? 'おわり,以上,おしまい,終了,stop,ストップ';
-  if (s.charName) document.getElementById('charSelect').value = s.charName;
+  if (s.charName !== undefined) document.getElementById('charSelect').value = s.charName;
+  else document.getElementById('charSelect').value = '__silent__';
   if (s.startPhrase) {
     const sel = document.getElementById('startPhrase');
     const opt = [...sel.options].find(o => o.value === s.startPhrase);
@@ -876,7 +877,8 @@ function buildCharMap() {
 function populateChars() {
   buildCharMap();
   const sel = document.getElementById('charSelect');
-  sel.innerHTML = '<option value="" id="opt-none">なし（TTS）</option>';
+  sel.innerHTML = '<option value="" id="opt-none">なし（TTS）</option>'
+    + '<option value="__silent__" id="opt-silent">無音（テキストのみ）</option>';
   Object.keys(CHAR_MAP).forEach(c => {
     const opt = document.createElement('option');
     opt.value = c;
@@ -884,7 +886,7 @@ function populateChars() {
     sel.appendChild(opt);
   });
   const s = getSettings();
-  if (s.charName) sel.value = s.charName;
+  sel.value = (s.charName !== undefined) ? s.charName : '__silent__';
   // クレジット動的更新
   const charNames = Object.keys(CHAR_MAP);
   if (charNames.length > 0) {
@@ -1182,6 +1184,12 @@ function playWav(key) {
 function speakAizuchi(text, emotionParams, type) {
   const charName = getCurrentChar();
 
+  // 無音モード：開始・終了のみ発話、それ以外はテキスト表示のみ
+  if (charName === '__silent__') {
+    if (type !== 'start' && type !== 'end') return;
+    // start/end はTTSフォールバックへ落ちる
+  }
+
   if (charName && window.VOICE_DATA && CHAR_MAP[charName]) {
     const cm = CHAR_MAP[charName];
     let key = null;
@@ -1380,6 +1388,7 @@ const I18N = {
     'title-chara': '🎤 キャラクター',
     'label-chara': '合いの手キャラ',
     'opt-none': 'なし（TTS）',
+    'opt-silent': '無音（テキストのみ）',
     'label-vol': '音量（0〜1）',
     'label-delay': '合いの手の遅延（秒）',
     'label-startPhrase': '開始フレーズ（TTS）',
@@ -1411,6 +1420,7 @@ const I18N = {
     'title-chara': '🎤 Character',
     'label-chara': 'Response Character',
     'opt-none': 'None (TTS)',
+    'opt-silent': 'Silent (text only)',
     'label-vol': 'Volume (0–1)',
     'label-delay': 'Response delay (sec)',
     'label-startPhrase': 'Start phrase (TTS)',
