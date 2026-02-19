@@ -8,5 +8,5 @@ https://natorispd.github.io/DIN/din.html
 Windows / Android
 
 Google Chrome / Microsoft Edge
-
+![Icon](./Gemini_Generated_Image_vhme4vhme4vhme4v.jpg)
 © 2026 Natori Satio
