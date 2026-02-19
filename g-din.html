@@ -3,58 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Recognition - Eternal Edition</title>
+    <title>Voice Recognition - Test A</title>
     <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background: #1a1a1a; color: #e0e0e0; }
-        h1 { font-size: 1.2rem; color: #00d4ff; }
         #status { margin: 15px; font-weight: bold; color: #ffcc00; }
-        
-        /* 設定パネル */
-        #settings { background: #2a2a2a; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 100%; max-width: 400px; border: 1px solid #444; }
+        #settings { background: #2a2a2a; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; border: 1px solid #444; }
         .control-group { margin-bottom: 20px; }
         label { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 8px; color: #bbb; }
-        input[type="range"] { width: 100%; cursor: pointer; accent-color: #00d4ff; }
-        
-        /* 文字起こしエリア */
-        #transcript { width: 100%; max-width: 400px; height: 200px; margin-top: 20px; background: #000; padding: 15px; border-radius: 8px; border: 1px solid #333; overflow-y: auto; font-family: monospace; line-height: 1.5; color: #00ff41; }
-        
-        /* 操作ボタン */
-        .btn-container { margin-top: 20px; }
-        button { padding: 18px 40px; font-size: 1.2em; font-weight: bold; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 50px; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,123,255,0.4); }
-        button:active { transform: scale(0.95); }
-        button.recording { background: #dc3545; box-shadow: 0 4px 10px rgba(220,53,69,0.4); animation: pulse 2s infinite; }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(220,53,69,0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(220,53,69,0); }
-            100% { box-shadow: 0 0 0 0 rgba(220,53,69,0); }
-        }
+        input[type="range"] { width: 100%; accent-color: #00d4ff; }
+        #transcript { width: 100%; max-width: 400px; height: 200px; margin-top: 20px; background: #000; padding: 15px; border-radius: 8px; overflow-y: auto; color: #00ff41; border: 1px solid #333; }
+        button { padding: 18px 40px; font-size: 1.2em; font-weight: bold; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 50px; }
+        button.recording { background: #dc3545; }
     </style>
 </head>
 <body>
 
-    <h1>Voice Recognition System</h1>
+    <h1>Verification Mode: A</h1>
     <div id="status">システム待機中</div>
 
     <div id="settings">
         <div class="control-group">
-            <label>ベースノイズ (静寂回避) <span id="baseValDisplay">0.01</span></label>
+            <label>ベースノイズ音量 <span id="baseValDisplay">0.01</span></label>
             <input type="range" id="baseVol" min="0" max="0.1" step="0.005" value="0.01">
         </div>
         <div class="control-group">
-            <label>相槌の小波 (反応強度) <span id="waveValDisplay">0.05</span></label>
+            <label>相槌の強さ（検証用） <span id="waveValDisplay">0.05</span></label>
             <input type="range" id="waveVol" min="0" max="0.3" step="0.01" value="0.05">
         </div>
     </div>
 
     <div id="transcript"></div>
+    <div style="margin-top:10px; font-size:0.8em; color:#888;">※ interimResults: false 設定中</div>
 
-    <div class="btn-container">
-        <button id="startBtn">START RECORDING</button>
+    <div class="btn-container" style="margin-top:20px;">
+        <button id="startBtn">START</button>
     </div>
 
     <script>
-        // --- 設定値の管理 ---
         let isRecording = false;
         let audioCtx = null;
         let noiseNode = null;
@@ -69,22 +54,10 @@
         const baseValDisplay = document.getElementById('baseValDisplay');
         const waveValDisplay = document.getElementById('waveValDisplay');
 
-        // スライダー操作の反映
         baseVolInput.oninput = (e) => baseValDisplay.textContent = e.target.value;
         waveVolInput.oninput = (e) => waveValDisplay.textContent = e.target.value;
 
-        // --- 旧来の音声再生ロジック（ここに既存の処理を記述） ---
-        function playOldStartVoice() {
-            console.log("旧来の開始ボイス再生...");
-            // ここに wav再生やTTSのコードを貼る
-        }
-
-        function playOldEndVoice() {
-            console.log("旧来の終了ボイス再生...");
-            // ここに wav再生やTTSのコードを貼る
-        }
-
-        // --- ピンクノイズ生成（アルゴリズム型） ---
+        // ピンクノイズ生成
         function createPinkNoise() {
             const bufferSize = 4096;
             let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
@@ -99,15 +72,13 @@
                     b3 = 0.86650 * b3 + white * 0.3104856;
                     b4 = 0.55000 * b4 + white * 0.5329522;
                     b5 = -0.7616 * b5 - white * 0.0168980;
-                    output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-                    output[i] *= 0.11;
+                    output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
                     b6 = white * 0.115926;
                 }
             };
             return node;
         }
 
-        // --- オーディオ初期化 ---
         function initAudio() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -119,74 +90,56 @@
             }
         }
 
-        // --- 音声認識エンジンの起動 ---
         function startRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("お使いのブラウザは音声認識に対応していません。");
-                return;
-            }
-
             recognition = new SpeechRecognition();
             recognition.lang = 'ja-JP';
             recognition.continuous = true;
-            recognition.interimResults = true;
+            
+            // 【検証項目A】中間結果をオフにする
+            recognition.interimResults = false;
 
             recognition.onstart = () => {
                 isRecording = true;
-                status.textContent = "LISTENING... (Noise Active)";
+                status.textContent = "検証稼働中...";
                 startBtn.classList.add('recording');
-                startBtn.textContent = "STOP RECORDING";
+                startBtn.textContent = "STOP";
             };
 
             recognition.onresult = (event) => {
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        const text = event.results[i][0].transcript;
-                        transcriptDiv.innerHTML += `<div>> ${text}</div>`;
-                        transcriptDiv.scrollTop = transcriptDiv.scrollHeight;
-                    } else {
-                        // 【相槌の小波】中間結果が返るたびに音量を一瞬上げる
-                        const base = parseFloat(baseVolInput.value);
-                        const wave = parseFloat(waveVolInput.value);
-                        const targetVol = base + wave;
-                        
-                        // 0.1秒で音量を上げ、0.5秒かけて戻す（クリック音防止）
-                        gainNode.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.05);
-                        gainNode.gain.setTargetAtTime(base, audioCtx.currentTime + 0.2, 0.2);
-                    }
-                }
+                // interimResults: false のため、文章が確定した時のみここが走る
+                const text = event.results[event.results.length - 1][0].transcript;
+                transcriptDiv.innerHTML += `<div>> ${text}</div>`;
+                transcriptDiv.scrollTop = transcriptDiv.scrollHeight;
+
+                // 確定時に一瞬ノイズを強める（相槌演出）
+                const base = parseFloat(baseVolInput.value);
+                const wave = parseFloat(waveVolInput.value);
+                gainNode.gain.setTargetAtTime(base + wave, audioCtx.currentTime, 0.05);
+                gainNode.gain.setTargetAtTime(base, audioCtx.currentTime + 0.5, 0.2);
             };
 
             recognition.onend = () => {
                 if (isRecording) {
-                    recognition.start(); // 自動再起動（5分の壁を突破）
+                    recognition.start();
                 } else {
-                    status.textContent = "システム待機中";
+                    status.textContent = "停止中";
                     startBtn.classList.remove('recording');
-                    startBtn.textContent = "START RECORDING";
                 }
             };
 
             recognition.start();
         }
 
-        // --- メインボタン操作 ---
         startBtn.onclick = () => {
             if (!isRecording) {
                 initAudio();
                 if (audioCtx.state === 'suspended') audioCtx.resume();
-                
-                playOldStartVoice(); // 頭のキャラ音声
                 startRecognition();
             } else {
                 isRecording = false;
-                
-                playOldEndVoice(); // お尻のキャラ音声
                 recognition.stop();
-                
-                // ノイズを徐々に消す
-                if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
+                if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
             }
         };
     </script>
