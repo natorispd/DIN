@@ -684,7 +684,7 @@ function extractEchoText() {
       lastLine = lastLine.slice(-30);
     }
   }
-  if (lastLine.length < 1) return null;
+  if (!lastLine) return null;
   return lastLine;
 }
 
