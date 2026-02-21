@@ -492,6 +492,8 @@ function startRecognition() {
         stopRecording();
         return;
       }
+      // TTS発話中はマイクがTTS音声を拾うので無視する
+      if (isTTSSpeaking) return;
       fullTranscript += final + '\n';
       triggerAizuchi();
     }
@@ -674,6 +676,8 @@ function extractEchoText() {
   return lastLine;
 }
 
+let isTTSSpeaking = false;
+
 function speakEchoTTS(text) {
   const s = getSettings();
   const cleanText = text.replace(/[♪…]/g, '');
@@ -684,7 +688,13 @@ function speakEchoTTS(text) {
   utter.pitch = 1.0;
   const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
   if (voices.length > 0) utter.voice = voices[0];
-  try { speechSynthesis.speak(utter); } catch(e) {}
+  isTTSSpeaking = true;
+  utter.onend = () => {
+    // TTS終了後少し待ってからフラグ解除（マイクの残響対策）
+    setTimeout(() => { isTTSSpeaking = false; }, 800);
+  };
+  utter.onerror = () => { isTTSSpeaking = false; };
+  try { speechSynthesis.speak(utter); } catch(e) { isTTSSpeaking = false; }
 }
 
 function triggerAizuchi() {
