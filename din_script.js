@@ -1039,7 +1039,10 @@ const I18N = {
     'label-chara': '合いの手キャラ',
     'opt-none': 'なし（TTS）',
     'opt-silent': '無音（テキストのみ）',
-    'label-vol': '音量（0〜1）',
+    'label-vol': '音量（<span id="volValue">80</span>%）',
+    'title-fontsize': '🔤 文字サイズ',
+    'label-fs': 'UI 倍率（<span id="fsValue">2.0</span>x）',
+    'label-fsText': 'テキスト倍率（<span id="fsTextValue">2.0</span>x）',
     'label-delay': '合いの手の遅延（秒）',
     'label-startPhrase': '開始フレーズ（TTS）',
     'desc-startPhrase': 'WAVキャラ未選択時に使用',
@@ -1072,7 +1075,10 @@ const I18N = {
     'label-chara': 'Response Character',
     'opt-none': 'None (TTS)',
     'opt-silent': 'Silent (text only)',
-    'label-vol': 'Volume (0–1)',
+    'label-vol': 'Volume (<span id="volValue">80</span>%)',
+    'title-fontsize': '🔤 Font Size',
+    'label-fs': 'UI Scale (<span id="fsValue">2.0</span>x)',
+    'label-fsText': 'Text Scale (<span id="fsTextValue">2.0</span>x)',
     'label-delay': 'Response delay (sec)',
     'label-startPhrase': 'Start phrase (TTS)',
     'desc-startPhrase': 'Used when no WAV character is selected',
@@ -1114,6 +1120,13 @@ function setLang(lang) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = d[id];
   });
+  // スライダーのspan値を再反映（innerHTML上書きでリセットされるため）
+  const volEl = document.getElementById('volValue');
+  if (volEl) volEl.textContent = document.getElementById('voiceVolume').value;
+  const fsEl = document.getElementById('fsValue');
+  if (fsEl) fsEl.textContent = parseFloat(document.getElementById('fontScale').value).toFixed(1);
+  const fstEl = document.getElementById('fsTextValue');
+  if (fstEl) fstEl.textContent = parseFloat(document.getElementById('fontScaleText').value).toFixed(1);
   // ボタン色更新
   document.getElementById('langJa').style.background = lang === 'ja' ? 'var(--accent)' : 'rgba(255,255,255,0.07)';
   document.getElementById('langJa').style.color = lang === 'ja' ? '#000' : 'var(--text)';
