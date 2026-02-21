@@ -1,7 +1,7 @@
 Dreaming Idea Note (DIN) - Trial Version
 
 [アプリを起動する]
-https://natorispd.github.io/DIN/din.html
+https://natorispd.github.io/DIN/din2.html
 
 動作環境
 
