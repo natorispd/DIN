@@ -262,6 +262,14 @@ function loadSettings() {
     else { document.getElementById('endPhraseCustom').value = s.endPhrase; }
   }
   if (s.lang) setLang(s.lang);
+  // フォントスケール
+  const fs = s.fontScale ?? 2;
+  const fsText = s.fontScaleText ?? 2;
+  document.getElementById('fontScale').value = fs;
+  document.getElementById('fontScaleText').value = fsText;
+  document.getElementById('fsValue').textContent = fs.toFixed(1);
+  document.getElementById('fsTextValue').textContent = fsText.toFixed(1);
+  applyFontScale(fs, fsText);
 }
 
 function saveSettings() {
@@ -275,7 +283,9 @@ function saveSettings() {
     startPhrase: document.getElementById('startPhraseCustom').value.trim() || document.getElementById('startPhrase').value,
     endPhrase: document.getElementById('endPhraseCustom').value.trim() || document.getElementById('endPhrase').value,
     accentColor: selectedSwatch ? selectedSwatch.dataset.color : '#f0c040',
-    endWords: document.getElementById('endWords').value.trim()
+    endWords: document.getElementById('endWords').value.trim(),
+    fontScale: parseFloat(document.getElementById('fontScale').value),
+    fontScaleText: parseFloat(document.getElementById('fontScaleText').value)
   };
   localStorage.setItem('igt_settings', JSON.stringify(s));
   alert('保存しました');
@@ -514,10 +524,12 @@ function updateLiveText() {
   }
 
   const total = lines.length;
+  const fsText = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fs-text')) || 2;
   let html = '';
   for (let i = 0; i < total; i++) {
     const distFromEnd = total - 1 - i;
-    const size = Math.max(3.25, 5.75 - distFromEnd * 0.3);
+    const baseSize = Math.max(0.65, 1.15 - distFromEnd * 0.06);
+    const size = baseSize * fsText;
     const lh = Math.max(1.2, 2.0 - distFromEnd * 0.08);
     const isLast = distFromEnd === 0;
     const weight = isLast ? 'font-weight:700;' : '';
@@ -549,9 +561,11 @@ function applyTextGradient() {
     }
   });
 
+  const fsText = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fs-text')) || 2;
   divs.forEach((d, i) => {
     const distFromVisible = Math.max(0, bottomIdx - i);
-    const size = Math.max(3.25, 5.75 - distFromVisible * 0.3);
+    const baseSize = Math.max(0.65, 1.15 - distFromVisible * 0.06);
+    const size = baseSize * fsText;
     const lh = Math.max(1.2, 2.0 - distFromVisible * 0.08);
     const isBottom = i === bottomIdx;
 
@@ -982,6 +996,28 @@ function applyAccentColor(color) {
     `rgb(${Math.floor(r*0.6)},${Math.floor(g*0.6)},${Math.floor(b*0.6)})`);
   // 録音中なら即反映
   if (isRecording) requestAnimationFrame(applyTextGradient);
+}
+
+// ============ FONT SCALE ============
+function applyFontScale(fs, fsText) {
+  document.documentElement.style.setProperty('--fs', fs);
+  document.documentElement.style.setProperty('--fs-text', fsText);
+  // 録音中のライブテキストにも反映
+  if (isRecording) requestAnimationFrame(applyTextGradient);
+}
+
+function previewFontScale() {
+  const v = parseFloat(document.getElementById('fontScale').value);
+  document.getElementById('fsValue').textContent = v.toFixed(1);
+  const vt = parseFloat(document.getElementById('fontScaleText').value);
+  applyFontScale(v, vt);
+}
+
+function previewFontScaleText() {
+  const v = parseFloat(document.getElementById('fontScaleText').value);
+  document.getElementById('fsTextValue').textContent = v.toFixed(1);
+  const vf = parseFloat(document.getElementById('fontScale').value);
+  applyFontScale(vf, v);
 }
 
 // ============ I18N ============
