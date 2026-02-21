@@ -1,5 +1,7 @@
 Dreaming Idea Note (DIN) - Trial Version
 
+朝目覚めた瞬間、夢の記憶をメモするためのアプリ
+
 [アプリを起動する]
 https://natorispd.github.io/DIN/din2.html
 
