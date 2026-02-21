@@ -699,16 +699,20 @@ function isTTSEcho(recognized) {
   const r = norm(recognized);
   const t = norm(lastTTSText);
   if (r.length === 0 || t.length === 0) return false;
-  // 認識テキストがTTSテキストに含まれる、または逆
-  if (t.includes(r) || r.includes(t)) return true;
-  // 先頭からの一致率で判定
+  // 短い認識結果（4文字以下）は誤判定リスクが高いのでスキップ
+  if (r.length <= 4) return false;
+  // 認識テキストがTTSテキストの大部分と一致する場合のみ反響と判定
+  if (t === r) return true;
+  if (r.length >= 5 && t.includes(r)) return true;
+  if (r.length >= 5 && r.includes(t)) return true;
+  // 先頭からの一致率で判定（長い文字列のみ）
   let match = 0;
   const shorter = r.length < t.length ? r : t;
   const longer = r.length < t.length ? t : r;
   for (let i = 0; i < shorter.length; i++) {
     if (shorter[i] === longer[i]) match++;
   }
-  return (match / shorter.length) >= 0.5;
+  return (match / shorter.length) >= 0.6;
 }
 
 function getTTSVoice(s) {
