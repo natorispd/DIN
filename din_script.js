@@ -627,7 +627,8 @@ function resetSilenceTimer() {
     if (!isRecording) return;
     const prompt = AIZUCHI_PROMPT[Math.floor(Math.random() * AIZUCHI_PROMPT.length)];
     showAizuchi(prompt);
-    speakAizuchi(prompt, { pitch:1.3, rate:0.8, vol:1.0 }, 'prompt');
+    // 途中の促しもTTSで統一（WAVキャラの合いの手と被らないように）
+    speakEchoTTS(prompt);
     aizuchiSpoken.push({ text: prompt, isEcho: false });
     silenceTimer = setTimeout(() => {
       if (isRecording) stopRecording();
