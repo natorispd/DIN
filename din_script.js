@@ -492,8 +492,9 @@ function startRecognition() {
         stopRecording();
         return;
       }
-      // TTS発話中はマイクがTTS音声を拾うので無視する
+      // TTS発話中→全無視、TTS直後→テキスト照合で反響を除去
       if (isTTSSpeaking) return;
+      if (isTTSEcho(final)) return;
       fullTranscript += final + '\n';
       triggerAizuchi();
     }
@@ -677,6 +678,27 @@ function extractEchoText() {
 }
 
 let isTTSSpeaking = false;
+let lastTTSText = '';      // 直近のTTS発話テキスト
+let ttsGuardUntil = 0;     // この時刻まではTTS反響チェックを行う
+
+// TTS発話テキストと認識テキストの類似度を判定（部分一致）
+function isTTSEcho(recognized) {
+  if (!lastTTSText || Date.now() > ttsGuardUntil) return false;
+  const norm = s => s.replace(/[\s、。？！?!♪〜～…\n]/g, '').toLowerCase();
+  const r = norm(recognized);
+  const t = norm(lastTTSText);
+  if (r.length === 0 || t.length === 0) return false;
+  // 認識テキストがTTSテキストに含まれる、または逆
+  if (t.includes(r) || r.includes(t)) return true;
+  // 先頭からの一致率で判定
+  let match = 0;
+  const shorter = r.length < t.length ? r : t;
+  const longer = r.length < t.length ? t : r;
+  for (let i = 0; i < shorter.length; i++) {
+    if (shorter[i] === longer[i]) match++;
+  }
+  return (match / shorter.length) >= 0.5;
+}
 
 function speakEchoTTS(text) {
   const s = getSettings();
@@ -689,9 +711,11 @@ function speakEchoTTS(text) {
   const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
   if (voices.length > 0) utter.voice = voices[0];
   isTTSSpeaking = true;
+  lastTTSText = cleanText;
   utter.onend = () => {
-    // TTS終了後少し待ってからフラグ解除（マイクの残響対策）
-    setTimeout(() => { isTTSSpeaking = false; }, 800);
+    isTTSSpeaking = false;
+    // TTS終了後しばらくは反響チェックを継続
+    ttsGuardUntil = Date.now() + 1500;
   };
   utter.onerror = () => { isTTSSpeaking = false; };
   try { speechSynthesis.speak(utter); } catch(e) { isTTSSpeaking = false; }
