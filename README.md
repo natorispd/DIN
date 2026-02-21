@@ -9,4 +9,6 @@ Windows / Android
 
 Google Chrome / Microsoft Edge
 ![Icon](./Gemini_Generated_Image_vhme4vhme4vhme4v.png)
+技術的な仕組みの解説は [TECHNICAL.md](./TECHNICAL.md) を参照してください。
+
 © 2026 Natori Satio
