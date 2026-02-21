@@ -86,7 +86,7 @@
     z-index:2;
   }
   .aizuchi-text {
-    font-size:1.3rem;
+    font-size:3.9rem;
     color:#f0c040;
     font-weight:300;
     opacity:0;
@@ -105,7 +105,7 @@
   /* タイマー */
   .timer {
     position:fixed; top:20px; right:20px;
-    font-size:0.75rem; color:#a08020;
+    font-size:2.25rem; color:#a08020;
     font-variant-numeric: tabular-nums;
     opacity:0; transition: opacity 0.3s;
     z-index:3;
@@ -115,7 +115,7 @@
   /* 録音インジケータ */
   .rec-label {
     position:fixed; top:20px; left:20px;
-    font-size:0.75rem; font-weight:700;
+    font-size:2.25rem; font-weight:700;
     color:#cc3333; letter-spacing:0.1em;
     opacity:0; transition: opacity 0.3s;
     z-index:3;
@@ -131,7 +131,7 @@
     position:fixed;
     top:50%; left:50%;
     transform:translate(-50%,-50%);
-    font-size:2.5rem;
+    font-size:7.5rem;
     color:rgba(240,192,64,0.5);
     pointer-events:none;
     z-index:1;
@@ -170,7 +170,7 @@
   /* 待機時のヒント */
   .hint {
     text-align:center;
-    font-size:0.8rem;
+    font-size:2.4rem;
     color:var(--text-dim);
     font-weight:300;
     transition: opacity 0.5s;
@@ -236,7 +236,7 @@
     padding:12px 0;
     background:none; border:none;
     color:var(--text-dim);
-    font-family:inherit; font-size:0.8rem;
+    font-family:inherit; font-size:2.4rem;
     cursor:pointer;
     border-bottom:2px solid transparent;
     transition: all 0.2s;
@@ -257,16 +257,16 @@
     cursor:pointer; transition: background 0.2s;
   }
   .record-card:active { background:rgba(255,255,255,0.07); }
-  .record-date { font-size:0.68rem; color:var(--text-dim); margin-bottom:5px; }
+  .record-date { font-size:2.04rem; color:var(--text-dim); margin-bottom:5px; }
   .record-preview {
-    font-size:0.82rem; line-height:1.6;
+    font-size:4.1rem; line-height:1.6;
     display:-webkit-box; -webkit-line-clamp:3;
     -webkit-box-orient:vertical; overflow:hidden;
     white-space:pre-wrap;
   }
   .record-empty {
     text-align:center; color:var(--text-dim);
-    padding:40px 0; font-size:0.85rem;
+    padding:40px 0; font-size:2.55rem;
   }
 
   /* 設定 */
@@ -275,25 +275,25 @@
     border-radius:12px; padding:14px; margin-bottom:10px;
   }
   .setting-title {
-    font-size:0.75rem; font-weight:700; margin-bottom:10px;
+    font-size:2.25rem; font-weight:700; margin-bottom:10px;
     color:var(--accent);
   }
   .setting-item { margin-bottom:10px; }
   .setting-item:last-child { margin-bottom:0; }
-  .setting-label { font-size:0.78rem; margin-bottom:4px; }
-  .setting-desc { font-size:0.68rem; color:var(--text-dim); margin-bottom:4px; }
+  .setting-label { font-size:2.34rem; margin-bottom:4px; }
+  .setting-desc { font-size:2.04rem; color:var(--text-dim); margin-bottom:4px; }
   input[type="number"], select, input[type="text"] {
     width:100%; padding:9px 11px;
     background:rgba(0,0,0,0.3); border:1px solid var(--border);
     border-radius:8px; color:var(--text);
-    font-family:inherit; font-size:0.82rem;
+    font-family:inherit; font-size:2.46rem;
   }
   select { appearance:none; }
   input:focus, select:focus { outline:none; border-color:var(--accent-dim); }
 
   .btn {
     padding:10px 20px; border:none; border-radius:8px;
-    font-family:inherit; font-size:0.8rem; cursor:pointer;
+    font-family:inherit; font-size:2.4rem; cursor:pointer;
     transition: opacity 0.2s;
   }
   .btn:active { opacity:0.7; }
@@ -326,24 +326,24 @@
     display:flex; justify-content:space-between; align-items:center;
     margin-bottom:16px;
   }
-  .modal-date { font-size:0.75rem; color:var(--text-dim); }
+  .modal-date { font-size:2.25rem; color:var(--text-dim); }
   .modal-close {
     background:none; border:none; color:var(--text-dim);
-    font-size:1.3rem; cursor:pointer; padding:4px 8px;
+    font-size:3.9rem; cursor:pointer; padding:4px 8px;
   }
   .modal-body {
-    font-size:0.9rem; line-height:1.8;
+    font-size:4.5rem; line-height:1.8;
     white-space:pre-wrap;
   }
   .modal-delete {
     margin-top:20px; padding:10px;
     background:none; border:1px solid var(--danger);
     color:var(--danger); border-radius:8px;
-    width:100%; font-family:inherit; font-size:0.8rem;
+    width:100%; font-family:inherit; font-size:2.4rem;
     cursor:pointer;
   }
   .modal-position {
-    font-size:0.68rem;
+    font-size:2.04rem;
     color:var(--text-dim);
     font-variant-numeric:tabular-nums;
   }
@@ -383,7 +383,7 @@
   <div class="text-area" id="textArea">
     <div id="textSpacer" style="flex:1 1 auto;min-height:60%"></div>
     <div class="hint" id="hint">
-      <div style="font-size:1.1rem;margin-bottom:12px;color:var(--text);font-weight:700">Dreaming Idea Note</div>
+      <div style="font-size:3.3rem;margin-bottom:12px;color:var(--text);font-weight:700">Dreaming Idea Note</div>
       <div style="line-height:2.0" id="hintText">
         タップ：録音開始 / 停止<br>
         スワイプ↑：設定・記録一覧
@@ -412,8 +412,8 @@
       <div class="setting-section">
         <div class="setting-title">🌐 言語 / Language</div>
         <div style="display:flex;gap:8px;">
-          <button class="btn" id="langJa" style="flex:1;background:var(--accent);color:#000;font-weight:700;font-size:0.8rem;" onclick="setLang('ja')">日本語</button>
-          <button class="btn" id="langEn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.8rem;" onclick="setLang('en')">English</button>
+          <button class="btn" id="langJa" style="flex:1;background:var(--accent);color:#000;font-weight:700;font-size:2.4rem;" onclick="setLang('ja')">日本語</button>
+          <button class="btn" id="langEn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:2.4rem;" onclick="setLang('en')">English</button>
         </div>
       </div>
       <div class="setting-section">
@@ -503,8 +503,8 @@
       <div class="setting-section">
         <div class="setting-title" id="title-export">📤 エクスポート（全件）</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportAll('json')">JSON</button>
-          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportAll('csv')">CSV</button>
+          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);font-size:2.25rem;" onclick="exportAll('json')">JSON</button>
+          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);font-size:2.25rem;" onclick="exportAll('csv')">CSV</button>
         </div>
       </div>
       <div class="setting-section">
@@ -523,12 +523,12 @@
       </div>
       <div class="setting-section">
         <div class="setting-title">© クレジット</div>
-        <div id="creditText" style="font-size:0.6rem;color:var(--text-dim);line-height:1.8;">
+        <div id="creditText" style="font-size:1.8rem;color:var(--text-dim);line-height:1.8;">
           音声合成：<a href="https://voicevox.hiroshiba.jp/" target="_blank" style="color:var(--accent-dim);text-decoration:none;">VOICEVOX</a><br>
           <a href="https://voicevox.hiroshiba.jp/term/" target="_blank" style="color:var(--text-dim);text-decoration:none;">VOICEVOX 利用規約</a>
         </div>
       </div>
-      <div style="text-align:center;padding:8px 0 4px;font-size:0.55rem;color:var(--text-dim);opacity:0.5;">
+      <div style="text-align:center;padding:8px 0 4px;font-size:1.65rem;color:var(--text-dim);opacity:0.5;">
         Natori Satio © 2026
       </div>
     </div>
@@ -545,8 +545,8 @@
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportSingle('txt')">TXT</button>
-      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportSingle('md')">Markdown</button>
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:2.25rem;" onclick="exportSingle('txt')">TXT</button>
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:2.25rem;" onclick="exportSingle('md')">Markdown</button>
     </div>
     <button class="modal-delete" id="modalDelete" style="margin-top:8px;">この記録を削除</button>
   </div>

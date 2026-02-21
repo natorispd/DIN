@@ -517,7 +517,7 @@ function updateLiveText() {
   let html = '';
   for (let i = 0; i < total; i++) {
     const distFromEnd = total - 1 - i;
-    const size = Math.max(0.65, 1.15 - distFromEnd * 0.06);
+    const size = Math.max(3.25, 5.75 - distFromEnd * 0.3);
     const lh = Math.max(1.2, 2.0 - distFromEnd * 0.08);
     const isLast = distFromEnd === 0;
     const weight = isLast ? 'font-weight:700;' : '';
@@ -551,7 +551,7 @@ function applyTextGradient() {
 
   divs.forEach((d, i) => {
     const distFromVisible = Math.max(0, bottomIdx - i);
-    const size = Math.max(0.65, 1.15 - distFromVisible * 0.06);
+    const size = Math.max(3.25, 5.75 - distFromVisible * 0.3);
     const lh = Math.max(1.2, 2.0 - distFromVisible * 0.08);
     const isBottom = i === bottomIdx;
 
