@@ -263,6 +263,14 @@ function loadSettings() {
     if (opt) { sel.value = s.endPhrase; }
     else { document.getElementById('endPhraseCustom').value = s.endPhrase; }
   }
+  // TTS設定
+  const ttsPitch = s.ttsPitch ?? 1.0;
+  const ttsRate = s.ttsRate ?? 1.0;
+  document.getElementById('ttsPitch').value = ttsPitch;
+  document.getElementById('ttsPitchValue').textContent = ttsPitch.toFixed(1);
+  document.getElementById('ttsRate').value = ttsRate;
+  document.getElementById('ttsRateValue').textContent = ttsRate.toFixed(1);
+  buildTTSVoiceList(s.ttsVoice || '');
   if (s.lang) setLang(s.lang);
   // フォントスケール
   const fs = s.fontScale ?? 2;
@@ -287,7 +295,10 @@ function saveSettings() {
     accentColor: selectedSwatch ? selectedSwatch.dataset.color : '#f0c040',
     endWords: document.getElementById('endWords').value.trim(),
     fontScale: parseFloat(document.getElementById('fontScale').value),
-    fontScaleText: parseFloat(document.getElementById('fontScaleText').value)
+    fontScaleText: parseFloat(document.getElementById('fontScaleText').value),
+    ttsVoice: document.getElementById('ttsVoiceSelect').value,
+    ttsPitch: parseFloat(document.getElementById('ttsPitch').value),
+    ttsRate: parseFloat(document.getElementById('ttsRate').value)
   };
   localStorage.setItem('igt_settings', JSON.stringify(s));
   alert('保存しました');
@@ -700,16 +711,25 @@ function isTTSEcho(recognized) {
   return (match / shorter.length) >= 0.5;
 }
 
+function getTTSVoice(s) {
+  const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+  if (s.ttsVoice) {
+    const found = voices.find(v => v.name === s.ttsVoice);
+    if (found) return found;
+  }
+  return voices.length > 0 ? voices[0] : null;
+}
+
 function speakEchoTTS(text) {
   const s = getSettings();
   const cleanText = text.replace(/[♪…]/g, '');
   const utter = new SpeechSynthesisUtterance(cleanText);
   utter.lang = 'ja-JP';
   utter.volume = Math.min(1.0, (s.volume ?? 0.8) * 0.6);
-  utter.rate = 0.9;
-  utter.pitch = 1.0;
-  const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
-  if (voices.length > 0) utter.voice = voices[0];
+  utter.rate = s.ttsRate ?? 1.0;
+  utter.pitch = s.ttsPitch ?? 1.0;
+  const voice = getTTSVoice(s);
+  if (voice) utter.voice = voice;
   isTTSSpeaking = true;
   lastTTSText = cleanText;
   utter.onend = () => {
@@ -801,15 +821,14 @@ async function speakAizuchi(text, emotionParams, type) {
   const cleanText = text.replace(/[♪…]/g, '');
   const utter = new SpeechSynthesisUtterance(cleanText);
   utter.lang = 'ja-JP';
+  const s = getSettings();
   const ep = emotionParams || {};
-  utter.volume = Math.min(1.0, (getSettings().volume ?? 0.8) * (ep.vol || 1.0));
-  utter.rate = ep.rate || 0.85;
-  utter.pitch = ep.pitch || 1.3;
-  
-  const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
-  if (voices.length > 0) {
-    utter.voice = voices[0];
-  }
+  utter.volume = Math.min(1.0, (s.volume ?? 0.8) * (ep.vol || 1.0));
+  utter.rate = Math.min(2.0, (s.ttsRate ?? 1.0) * (ep.rate || 0.85));
+  utter.pitch = Math.min(2.0, (s.ttsPitch ?? 1.0) * (ep.pitch || 1.3));
+
+  const voice = getTTSVoice(s);
+  if (voice) utter.voice = voice;
   
   try {
     speechSynthesis.speak(utter);
@@ -1062,6 +1081,37 @@ function previewVolume() {
   document.getElementById('volValue').textContent = v;
 }
 
+function previewTTSPitch() {
+  const v = parseFloat(document.getElementById('ttsPitch').value);
+  document.getElementById('ttsPitchValue').textContent = v.toFixed(1);
+}
+
+function previewTTSRate() {
+  const v = parseFloat(document.getElementById('ttsRate').value);
+  document.getElementById('ttsRateValue').textContent = v.toFixed(1);
+}
+
+function buildTTSVoiceList(savedVoice) {
+  const sel = document.getElementById('ttsVoiceSelect');
+  const populate = () => {
+    const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+    // デフォルト以外を追加
+    voices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.textContent = v.name.replace(/Microsoft |Google /, '');
+      sel.appendChild(opt);
+    });
+    if (savedVoice) sel.value = savedVoice;
+  };
+  // 一部ブラウザでは voiceschanged 後に一覧が入る
+  if (speechSynthesis.getVoices().length > 0) {
+    populate();
+  } else {
+    speechSynthesis.addEventListener('voiceschanged', populate, { once: true });
+  }
+}
+
 // ============ I18N ============
 const I18N = {
   ja: {
@@ -1077,6 +1127,9 @@ const I18N = {
     'title-fontsize': '🔤 文字サイズ',
     'label-fs': 'UI 倍率（<span id="fsValue">2.0</span>x）',
     'label-fsText': 'テキスト倍率（<span id="fsTextValue">2.0</span>x）',
+    'label-ttsVoice': 'TTS 声の種類',
+    'label-ttsPitch': 'TTS 高さ（<span id="ttsPitchValue">1.0</span>）',
+    'label-ttsRate': 'TTS 速さ（<span id="ttsRateValue">1.0</span>）',
     'label-delay': '合いの手の遅延（秒）',
     'label-startPhrase': '開始フレーズ（TTS）',
     'desc-startPhrase': 'WAVキャラ未選択時に使用',
@@ -1113,6 +1166,9 @@ const I18N = {
     'title-fontsize': '🔤 Font Size',
     'label-fs': 'UI Scale (<span id="fsValue">2.0</span>x)',
     'label-fsText': 'Text Scale (<span id="fsTextValue">2.0</span>x)',
+    'label-ttsVoice': 'TTS Voice',
+    'label-ttsPitch': 'TTS Pitch (<span id="ttsPitchValue">1.0</span>)',
+    'label-ttsRate': 'TTS Speed (<span id="ttsRateValue">1.0</span>)',
     'label-delay': 'Response delay (sec)',
     'label-startPhrase': 'Start phrase (TTS)',
     'desc-startPhrase': 'Used when no WAV character is selected',
@@ -1161,6 +1217,10 @@ function setLang(lang) {
   if (fsEl) fsEl.textContent = parseFloat(document.getElementById('fontScale').value).toFixed(1);
   const fstEl = document.getElementById('fsTextValue');
   if (fstEl) fstEl.textContent = parseFloat(document.getElementById('fontScaleText').value).toFixed(1);
+  const tpEl = document.getElementById('ttsPitchValue');
+  if (tpEl) tpEl.textContent = parseFloat(document.getElementById('ttsPitch').value).toFixed(1);
+  const trEl = document.getElementById('ttsRateValue');
+  if (trEl) trEl.textContent = parseFloat(document.getElementById('ttsRate').value).toFixed(1);
   // ボタン色更新
   document.getElementById('langJa').style.background = lang === 'ja' ? 'var(--accent)' : 'rgba(255,255,255,0.07)';
   document.getElementById('langJa').style.color = lang === 'ja' ? '#000' : 'var(--text)';

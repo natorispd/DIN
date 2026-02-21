@@ -460,6 +460,20 @@
           <input type="range" id="voiceVolume" min="0" max="100" step="5" value="80" style="width:100%;accent-color:var(--accent);" oninput="previewVolume()">
         </div>
         <div class="setting-item">
+          <div class="setting-label" id="label-ttsVoice">TTS 声の種類</div>
+          <select id="ttsVoiceSelect" style="width:100%;">
+            <option value="">デフォルト</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-ttsPitch">TTS 高さ（<span id="ttsPitchValue">1.0</span>）</div>
+          <input type="range" id="ttsPitch" min="0.5" max="2" step="0.1" value="1" style="width:100%;accent-color:var(--accent);" oninput="previewTTSPitch()">
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-ttsRate">TTS 速さ（<span id="ttsRateValue">1.0</span>）</div>
+          <input type="range" id="ttsRate" min="0.5" max="2" step="0.1" value="1" style="width:100%;accent-color:var(--accent);" oninput="previewTTSRate()">
+        </div>
+        <div class="setting-item">
           <div class="setting-label" id="label-delay">合いの手の遅延（秒）</div>
           <input type="number" id="aizuchiInterval" min="0" max="60" step="1" value="0">
         </div>
