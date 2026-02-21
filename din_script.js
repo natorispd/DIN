@@ -396,7 +396,7 @@ function startRecording() {
   const startPhrase = getSettings().startPhrase || 'なぁに？';
   showAizuchi(startPhrase);
   speakAizuchi(startPhrase, { pitch:1.3, rate:0.75, vol:1.0 }, 'start');
-  aizuchiSpoken.push(startPhrase);
+  aizuchiSpoken.push({ text: startPhrase, isEcho: false });
 
   startTimer();
   startRecognition();
@@ -439,7 +439,9 @@ function stopRecording() {
 
 function cleanTranscript(text) {
   let result = text;
-  for (const q of aizuchiSpoken) {
+  for (const entry of aizuchiSpoken) {
+    if (entry.isEcho) continue; // オウム返しはユーザ発話なので消さない
+    const q = entry.text;
     result = result.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), ' ');
     const noP = q.replace(/[、。？！?!♪〜～…]/g, '');
     if (noP !== q && noP.length > 0) {
@@ -611,7 +613,7 @@ function resetSilenceTimer() {
     const prompt = AIZUCHI_PROMPT[Math.floor(Math.random() * AIZUCHI_PROMPT.length)];
     showAizuchi(prompt);
     speakAizuchi(prompt, { pitch:1.3, rate:0.8, vol:1.0 }, 'prompt');
-    aizuchiSpoken.push(prompt);
+    aizuchiSpoken.push({ text: prompt, isEcho: false });
     silenceTimer = setTimeout(() => {
       if (isRecording) stopRecording();
     }, timeout);
@@ -638,6 +640,35 @@ function resetAutoSaveTimer() {
 // ============ AIZUCHI TRIGGER ============
 let aizuchiCooldown = false;
 
+function extractEchoText() {
+  const lines = fullTranscript.split('\n').filter(l => l.trim().length > 0);
+  if (lines.length === 0) return null;
+  let lastLine = lines[lines.length - 1].trim();
+  if (lastLine.length > 40) {
+    const punctIdx = Math.max(lastLine.lastIndexOf('。', lastLine.length - 2), lastLine.lastIndexOf('、', lastLine.length - 2));
+    if (punctIdx > lastLine.length - 40 && punctIdx > 0) {
+      lastLine = lastLine.substring(punctIdx + 1).trim();
+    } else {
+      lastLine = lastLine.slice(-30);
+    }
+  }
+  if (lastLine.length < 3) return null;
+  return lastLine;
+}
+
+function speakEchoTTS(text) {
+  const s = getSettings();
+  const cleanText = text.replace(/[♪…]/g, '');
+  const utter = new SpeechSynthesisUtterance(cleanText);
+  utter.lang = 'ja-JP';
+  utter.volume = Math.min(1.0, (s.volume ?? 0.8) * 0.6);
+  utter.rate = 0.9;
+  utter.pitch = 1.0;
+  const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('ja'));
+  if (voices.length > 0) utter.voice = voices[0];
+  try { speechSynthesis.speak(utter); } catch(e) {}
+}
+
 function triggerAizuchi() {
   if (!isRecording || aizuchiCooldown) return;
   const s = getSettings();
@@ -648,10 +679,13 @@ function triggerAizuchi() {
 
   aizuchiTimeout = setTimeout(() => {
     if (!isRecording) return;
-    const aizuchi = pickAizuchi();
-    aizuchiSpoken.push(aizuchi.text);
-    showAizuchi(aizuchi.text);
-    speakAizuchi(aizuchi.text, aizuchi, 'aizuchi');
+    const echoText = extractEchoText();
+    if (echoText) {
+      aizuchiSpoken.push({ text: echoText, isEcho: true });
+      showAizuchi(echoText);
+      speakEchoTTS(echoText);
+    }
+    // echo取得失敗時（短すぎる発話）は何もしない
     setTimeout(() => { aizuchiCooldown = false; }, 1500);
   }, delay);
 }
@@ -785,9 +819,17 @@ function renderList() {
 function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ============ MODAL ============
-function openModal(id) {
-  const r = getRecords().find(r => r.id === id);
+let currentModalId = null;
+let modalTouchStartX = 0;
+let modalTouchStartY = 0;
+let modalTouchStartTime = 0;
+let modalSwiping = false;
+
+function openModal(id, skipOverlay) {
+  const records = getRecords();
+  const r = records.find(r => r.id === id);
   if (!r) return;
+  const idx = records.findIndex(r => r.id === id);
   const d = new Date(r.date);
   document.getElementById('modalDate').textContent =
     `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
@@ -795,18 +837,73 @@ function openModal(id) {
   document.getElementById('modalDelete').onclick = () => {
     if (confirm('削除しますか？')) { deleteRecord(id); closeModal(); renderList(); }
   };
+  const indicator = document.getElementById('modalPosition');
+  if (indicator) indicator.textContent = `${idx + 1} / ${records.length}`;
   currentModalId = id;
-  document.getElementById('modal').classList.add('show');
+  if (!skipOverlay) {
+    document.getElementById('modal').classList.add('show');
+  }
 }
 function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
+function navigateModal(direction) {
+  const records = getRecords();
+  const idx = records.findIndex(r => r.id === currentModalId);
+  if (idx < 0) return;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= records.length) return;
+
+  const content = document.querySelector('.modal-content');
+  const slideOut = direction > 0 ? 'slideOutLeft' : 'slideOutRight';
+  const slideIn = direction > 0 ? 'slideInRight' : 'slideInLeft';
+
+  content.style.animation = `${slideOut} 0.15s ease-out`;
+  content.addEventListener('animationend', function handler() {
+    content.removeEventListener('animationend', handler);
+    openModal(records[newIdx].id, true);
+    content.style.animation = `${slideIn} 0.15s ease-out`;
+  });
+}
+
+// モーダル横スワイプ
+(function() {
+  const mc = document.querySelector('.modal-content');
+  if (!mc) return;
+  mc.addEventListener('touchstart', (e) => {
+    modalTouchStartX = e.touches[0].clientX;
+    modalTouchStartY = e.touches[0].clientY;
+    modalTouchStartTime = Date.now();
+    modalSwiping = false;
+  }, { passive:true });
+
+  mc.addEventListener('touchmove', (e) => {
+    if (!currentModalId) return;
+    const dx = e.touches[0].clientX - modalTouchStartX;
+    const dy = e.touches[0].clientY - modalTouchStartY;
+    if (!modalSwiping && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      modalSwiping = true;
+    }
+    if (modalSwiping) e.preventDefault();
+  }, { passive:false });
+
+  mc.addEventListener('touchend', (e) => {
+    if (!currentModalId) return;
+    const dx = e.changedTouches[0].clientX - modalTouchStartX;
+    const dy = e.changedTouches[0].clientY - modalTouchStartY;
+    const dt = Date.now() - modalTouchStartTime;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 500) {
+      navigateModal(dx < 0 ? 1 : -1);
+    }
+    modalSwiping = false;
+  }, { passive:true });
+})();
+
 // ============ EXPORT (Windows対応) ============
-let currentModalId = null;
 
 function downloadFile(filename, content, mime) {
-  // Windows用：BOMなし、改行を\r\nに変換
+  // UTF-8 BOM付き、改行を\r\nに変換
   const windowsContent = content.replace(/\n/g, '\r\n');
-  const blob = new Blob([windowsContent], { type: mime + ';charset=utf-8;' });
+  const blob = new Blob(['\uFEFF' + windowsContent], { type: mime + ';charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;

@@ -342,6 +342,27 @@
     width:100%; font-family:inherit; font-size:0.8rem;
     cursor:pointer;
   }
+  .modal-position {
+    font-size:0.68rem;
+    color:var(--text-dim);
+    font-variant-numeric:tabular-nums;
+  }
+  @keyframes slideOutLeft {
+    from { transform:translateX(0); opacity:1; }
+    to { transform:translateX(-30%); opacity:0; }
+  }
+  @keyframes slideOutRight {
+    from { transform:translateX(0); opacity:1; }
+    to { transform:translateX(30%); opacity:0; }
+  }
+  @keyframes slideInLeft {
+    from { transform:translateX(-30%); opacity:0; }
+    to { transform:translateX(0); opacity:1; }
+  }
+  @keyframes slideInRight {
+    from { transform:translateX(30%); opacity:0; }
+    to { transform:translateX(0); opacity:1; }
+  }
 </style>
 </head>
 <body>
@@ -519,6 +540,7 @@
   <div class="modal-content">
     <div class="modal-header">
       <div class="modal-date" id="modalDate"></div>
+      <div class="modal-position" id="modalPosition"></div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
