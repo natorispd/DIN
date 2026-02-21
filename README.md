@@ -10,7 +10,7 @@ https://natorispd.github.io/DIN/din2.html
 Windows / Android
 
 Google Chrome / Microsoft Edge
-![Icon](./Gemini_Generated_Image_vhme4vhme4vhme4v.png)
+![Icon](./Gemini_Generated_Image_x7hhufx7hhufx7hh.png)
 技術的な仕組みの解説は [TECHNICAL.md](./TECHNICAL.md) を参照してください。
 [安全性について](https://github.com/natorispd/DIN/blob/main/techeasy.md)
 
