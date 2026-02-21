@@ -242,7 +242,9 @@ function switchDrawerTab(name) {
 // ============ SETTINGS ============
 function loadSettings() {
   const s = JSON.parse(localStorage.getItem('igt_settings') || '{}');
-  document.getElementById('voiceVolume').value = s.volume ?? 0.8;
+  const volPct = Math.round((s.volume ?? 0.8) * 100);
+  document.getElementById('voiceVolume').value = volPct;
+  document.getElementById('volValue').textContent = volPct;
   document.getElementById('aizuchiInterval').value = s.interval ?? 0;
   document.getElementById('silenceTimeout').value = s.silence ?? 30;
   document.getElementById('autoSaveInterval').value = s.autoSave ?? 3;
@@ -275,7 +277,7 @@ function loadSettings() {
 function saveSettings() {
   const selectedSwatch = document.querySelector('.color-swatch.selected');
   const s = {
-    volume: parseFloat(document.getElementById('voiceVolume').value),
+    volume: parseInt(document.getElementById('voiceVolume').value) / 100,
     interval: parseInt(document.getElementById('aizuchiInterval').value),
     silence: parseInt(document.getElementById('silenceTimeout').value),
     autoSave: parseInt(document.getElementById('autoSaveInterval').value),
@@ -1019,6 +1021,11 @@ function previewFontScaleText() {
   document.getElementById('fsTextValue').textContent = v.toFixed(1);
   const vf = parseFloat(document.getElementById('fontScale').value);
   applyFontScale(vf, v);
+}
+
+function previewVolume() {
+  const v = parseInt(document.getElementById('voiceVolume').value);
+  document.getElementById('volValue').textContent = v;
 }
 
 // ============ I18N ============
