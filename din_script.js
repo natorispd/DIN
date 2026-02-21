@@ -362,6 +362,7 @@ window.addEventListener('load', () => {
   loadSettings();
   initColorPalette();
   loadTTSVoices(); // TTS音声を事前読み込み
+  initModalSwipe(); // モーダル横スワイプ
 });
 
 // ============ RECORDING ============
@@ -866,7 +867,7 @@ function navigateModal(direction) {
 }
 
 // モーダル横スワイプ
-(function() {
+function initModalSwipe() {
   const mc = document.querySelector('.modal-content');
   if (!mc) return;
   mc.addEventListener('touchstart', (e) => {
@@ -896,7 +897,7 @@ function navigateModal(direction) {
     }
     modalSwiping = false;
   }, { passive:true });
-})();
+}
 
 // ============ EXPORT (Windows対応) ============
 
