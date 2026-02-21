@@ -336,6 +336,29 @@
   .modal-body {
     font-size:calc(0.9rem * var(--fs-text)); line-height:1.8;
     white-space:pre-wrap;
+    user-select:text;
+    -webkit-user-select:text;
+    cursor:text;
+  }
+
+  .copy-toast {
+    position:fixed;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%) scale(0.8);
+    background:rgba(240,192,64,0.95);
+    color:#000;
+    padding:12px 28px;
+    border-radius:12px;
+    font-size:calc(0.85rem * var(--fs));
+    font-weight:700;
+    z-index:300;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .copy-toast.show {
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
   }
   .modal-delete {
     margin-top:20px; padding:10px;
@@ -558,6 +581,9 @@
       <div style="text-align:center;padding:8px 0 4px;font-size:calc(0.55rem * var(--fs));color:var(--text-dim);opacity:0.5;">
         Natori Satio © 2026
       </div>
+      <div style="text-align:center;padding:0 0 8px;font-size:calc(0.45rem * var(--fs));color:var(--text-dim);opacity:0.3;">
+        v2026.02.22-1530
+      </div>
     </div>
   </div>
 </div>
@@ -572,12 +598,15 @@
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="copyModalText()">📋 コピー</button>
       <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSingle('txt')">TXT</button>
       <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSingle('md')">Markdown</button>
     </div>
     <button class="modal-delete" id="modalDelete" style="margin-top:8px;">この記録を削除</button>
   </div>
 </div>
+
+<div class="copy-toast" id="copyToast">コピーしました</div>
 
 <script src="din_script.js"></script>
 </body>

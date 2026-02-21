@@ -386,6 +386,7 @@ window.addEventListener('load', () => {
   initColorPalette();
   loadTTSVoices(); // TTS音声を事前読み込み
   initModalSwipe(); // モーダル横スワイプ
+  initModalCopy(); // モーダル長押し/ダブルタップでコピー
 });
 
 // ============ RECORDING ============
@@ -1236,4 +1237,56 @@ function setLang(lang) {
   const s = getSettings();
   s.lang = lang;
   localStorage.setItem('igt_settings', JSON.stringify(s));
+}
+
+// ============ MODAL COPY (長押し / ダブルタップ) ============
+function copyModalText() {
+  const r = getRecords().find(r => r.id === currentModalId);
+  if (!r) return;
+  navigator.clipboard.writeText(r.text).then(() => {
+    showCopyToast();
+  }).catch(() => {
+    // フォールバック（clipboard API非対応時）
+    const ta = document.createElement('textarea');
+    ta.value = r.text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showCopyToast();
+  });
+}
+
+let copyToastTimer = null;
+function showCopyToast() {
+  const el = document.getElementById('copyToast');
+  el.classList.add('show');
+  clearTimeout(copyToastTimer);
+  copyToastTimer = setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+function initModalCopy() {
+  const body = document.getElementById('modalBody');
+  if (!body) return;
+
+  // ダブルタップ → 全文コピー
+  let lastTapTime = 0;
+  body.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTapTime < 400) {
+      e.preventDefault();
+      copyModalText();
+      lastTapTime = 0;
+    } else {
+      lastTapTime = now;
+    }
+  });
+
+  // PC: ダブルクリック → 全文コピー
+  body.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    copyModalText();
+  });
 }
