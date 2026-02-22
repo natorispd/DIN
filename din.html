@@ -367,15 +367,29 @@
     cursor:text;
   }
   .modal-line {
-    padding:4px 8px;
+    padding:6px 8px;
     border-radius:6px;
     cursor:pointer;
     transition: background 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
+  .modal-line span { flex: 1; min-width: 0; }
   .modal-line.selected {
     background:var(--accent);
     color:#000;
   }
+  .modal-line .line-reorder { display: none; gap: 4px; flex-shrink: 0; }
+  .modal-line.selected .line-reorder { display: flex; }
+  .line-reorder button {
+    background: rgba(0,0,0,0.45); color: #fff; border: none;
+    border-radius: 4px; padding: 4px 8px;
+    font-size: calc(0.6rem * var(--fs)); cursor: pointer;
+  }
+  .line-reorder button:active { background: rgba(0,0,0,0.75); }
+  .line-reorder .line-del { background: rgba(192,64,64,0.7); }
+  .line-reorder .line-del:active { background: rgba(192,64,64,0.95); }
 
   .copy-toast {
     position:fixed;
