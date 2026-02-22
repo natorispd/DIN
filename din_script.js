@@ -1131,7 +1131,11 @@ function moveLine(btn, direction) {
 
 function handleLineClick(div) {
   if (selectedLine === div) return;
-  if (selectedLine) selectedLine.classList.remove('selected');
+  if (selectedLine) {
+    selectedLine.classList.remove('selected');
+    selectedLine = null;
+    return;
+  }
   selectedLine = div;
   div.classList.add('selected');
 }
