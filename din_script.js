@@ -1104,7 +1104,7 @@ function renderModalLines(text) {
     div.appendChild(span);
     const reorder = document.createElement('div');
     reorder.className = 'line-reorder';
-    reorder.innerHTML = '<button onclick="moveLine(this,-1);event.stopPropagation()">▲</button><button onclick="moveLine(this,1);event.stopPropagation()">▼</button><button onclick="deleteLine(this);event.stopPropagation()">✕</button>';
+    reorder.innerHTML = '<button onclick="moveLine(this,-1);event.stopPropagation()">▲</button><button onclick="moveLine(this,1);event.stopPropagation()">▼</button><button class="line-del" onclick="deleteLine(this);event.stopPropagation()">✕</button>';
     div.appendChild(reorder);
     div.addEventListener('click', (e) => {
       e.stopPropagation();
