@@ -1129,7 +1129,11 @@ function moveLine(btn, direction) {
   saveModalText();
 }
 
+let lineClickGuard = 0;
 function handleLineClick(div) {
+  const now = Date.now();
+  if (now - lineClickGuard < 300) return;
+  lineClickGuard = now;
   if (selectedLine === div) return;
   if (selectedLine) {
     selectedLine.classList.remove('selected');
