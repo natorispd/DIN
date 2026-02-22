@@ -1099,13 +1099,34 @@ function renderModalLines(text) {
   lines.forEach((line) => {
     const div = document.createElement('div');
     div.className = 'modal-line';
-    div.textContent = line;
+    const span = document.createElement('span');
+    span.textContent = line;
+    div.appendChild(span);
+    const reorder = document.createElement('div');
+    reorder.className = 'line-reorder';
+    reorder.innerHTML = '<button onclick="moveLine(this,-1);event.stopPropagation()">▲</button><button onclick="moveLine(this,1);event.stopPropagation()">▼</button>';
+    div.appendChild(reorder);
     div.addEventListener('click', (e) => {
       e.stopPropagation();
       handleLineClick(div);
     });
     body.appendChild(div);
   });
+}
+
+function moveLine(btn, direction) {
+  const line = btn.closest('.modal-line');
+  const body = document.getElementById('modalBody');
+  const lines = [...body.querySelectorAll('.modal-line')];
+  const idx = lines.indexOf(line);
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= lines.length) return;
+  if (direction === -1) {
+    body.insertBefore(line, lines[newIdx]);
+  } else {
+    body.insertBefore(line, lines[newIdx].nextSibling);
+  }
+  saveModalText();
 }
 
 function handleLineClick(div) {
@@ -1130,7 +1151,8 @@ function clearLineSelection() {
 function saveModalText() {
   if (!currentModalId) return;
   const lines = [...document.getElementById('modalBody').querySelectorAll('.modal-line')]
-    .map(el => el.textContent).filter(l => l.trim().length > 0);
+    .map(el => { const s = el.querySelector('span'); return s ? s.textContent : el.textContent; })
+    .filter(l => l.trim().length > 0);
   if (lines.length === 0) {
     deleteRecord(currentModalId);
     closeModal();
