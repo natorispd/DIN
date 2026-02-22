@@ -1,5 +1,5 @@
 // ============ VERSION ============
-const APP_VERSION = 'v2026.02.22-1500';
+const APP_VERSION = 'v2026.02.22-1600';
 
 // ============ STATE ============
 let isRecording = false;
@@ -417,8 +417,9 @@ function startRecording() {
   document.getElementById('bgOrb').className = 'bg-orb recording';
   document.getElementById('timer').classList.add('show');
   document.getElementById('recLabel').classList.add('show');
-  document.getElementById('centerIcon').textContent = '■';
-  document.getElementById('centerIcon').classList.add('dim');
+  const ci = document.getElementById('centerIcon');
+  ci.classList.add('recording-icon', 'dim');
+  ci.dataset.recording = '1';
   document.getElementById('liveText').classList.add('show');
   document.getElementById('hint').classList.add('hide');
   document.getElementById('liveText').textContent = '';
@@ -459,8 +460,9 @@ function stopRecording() {
     document.getElementById('bgOrb').className = 'bg-orb idle';
     document.getElementById('timer').classList.remove('show');
     document.getElementById('recLabel').classList.remove('show');
-    document.getElementById('centerIcon').textContent = '▶';
-    document.getElementById('centerIcon').classList.remove('dim');
+    const ci2 = document.getElementById('centerIcon');
+    ci2.classList.remove('recording-icon', 'dim');
+    ci2.dataset.recording = '0';
     document.getElementById('liveText').classList.remove('show');
     document.getElementById('hint').classList.remove('hide');
     document.getElementById('liveText').textContent = '';

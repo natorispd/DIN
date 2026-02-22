@@ -132,13 +132,25 @@
     position:fixed;
     top:50%; left:50%;
     transform:translate(-50%,-50%);
-    font-size:calc(2.5rem * var(--fs));
-    color:rgba(240,192,64,0.5);
     pointer-events:none;
     z-index:1;
     transition: opacity 0.4s;
+    width:calc(64px * var(--fs));
+    height:calc(64px * var(--fs));
   }
+  .center-icon svg { width:100%; height:100%; }
   .center-icon.dim { opacity:0.12; }
+  .center-icon .stop-icon {
+    display:none;
+    font-size:calc(2.5rem * var(--fs));
+    color:rgba(240,192,64,0.5);
+    line-height:1;
+  }
+  .center-icon.recording-icon svg { display:none; }
+  .center-icon.recording-icon .stop-icon { display:block; }
+  .center-icon.recording-icon {
+    display:flex; align-items:center; justify-content:center;
+  }
 
   /* 中央〜下部：発話テキスト */
   .text-area {
@@ -423,7 +435,82 @@
 <div class="main-screen" id="mainScreen">
   <div class="rec-label" id="recLabel">⏺ RECORDING</div>
   <div class="timer" id="timer">00:00</div>
-  <div class="center-icon" id="centerIcon">▶</div>
+  <div class="center-icon" id="centerIcon"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated;">
+    <!-- parrot pixel art -->
+    <!-- head top -->
+    <rect x="12" y="2" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="14" y="2" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="16" y="2" width="2" height="2" fill="#2ec4b6"/>
+    <!-- head row 2 -->
+    <rect x="10" y="4" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="12" y="4" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="14" y="4" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="16" y="4" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="18" y="4" width="2" height="2" fill="#2ec4b6"/>
+    <!-- head row 3 (eye) -->
+    <rect x="10" y="6" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="12" y="6" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="14" y="6" width="2" height="2" fill="#ffffff"/>
+    <rect x="15" y="6" width="1" height="1" fill="#111111"/>
+    <rect x="16" y="6" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="18" y="6" width="2" height="2" fill="#2ec4b6"/>
+    <!-- beak -->
+    <rect x="10" y="8" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="12" y="8" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="14" y="8" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="16" y="8" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="18" y="8" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="20" y="8" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="18" y="10" width="2" height="2" fill="#e87d0d"/>
+    <!-- body top -->
+    <rect x="10" y="10" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="12" y="10" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="14" y="10" width="2" height="2" fill="#3dd8c8"/>
+    <rect x="16" y="10" width="2" height="2" fill="#2ec4b6"/>
+    <!-- body (orange belly) -->
+    <rect x="8" y="12" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="10" y="12" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="12" y="12" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="14" y="12" width="2" height="2" fill="#ffbf69"/>
+    <rect x="16" y="12" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="18" y="12" width="2" height="2" fill="#2ec4b6"/>
+    <!-- body mid -->
+    <rect x="8" y="14" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="10" y="14" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="12" y="14" width="2" height="2" fill="#ffbf69"/>
+    <rect x="14" y="14" width="2" height="2" fill="#ffbf69"/>
+    <rect x="16" y="14" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="18" y="14" width="2" height="2" fill="#2ec4b6"/>
+    <!-- body lower -->
+    <rect x="8" y="16" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="10" y="16" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="12" y="16" width="2" height="2" fill="#ffbf69"/>
+    <rect x="14" y="16" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="16" y="16" width="2" height="2" fill="#2ec4b6"/>
+    <!-- wing -->
+    <rect x="6" y="14" width="2" height="2" fill="#20a39e"/>
+    <rect x="4" y="16" width="2" height="2" fill="#20a39e"/>
+    <rect x="6" y="16" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="4" y="18" width="2" height="2" fill="#178a86"/>
+    <rect x="6" y="18" width="2" height="2" fill="#20a39e"/>
+    <!-- tail -->
+    <rect x="10" y="18" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="12" y="18" width="2" height="2" fill="#ff9f1c"/>
+    <rect x="14" y="18" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="10" y="20" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="12" y="20" width="2" height="2" fill="#2ec4b6"/>
+    <rect x="10" y="22" width="2" height="2" fill="#20a39e"/>
+    <rect x="12" y="22" width="2" height="2" fill="#20a39e"/>
+    <rect x="10" y="24" width="2" height="2" fill="#178a86"/>
+    <rect x="12" y="24" width="2" height="2" fill="#178a86"/>
+    <!-- feet -->
+    <rect x="10" y="26" width="2" height="2" fill="#e87d0d"/>
+    <rect x="12" y="26" width="2" height="2" fill="#e87d0d"/>
+    <rect x="8" y="28" width="2" height="2" fill="#e87d0d"/>
+    <rect x="10" y="28" width="2" height="2" fill="#e87d0d"/>
+    <rect x="12" y="28" width="2" height="2" fill="#e87d0d"/>
+    <rect x="14" y="28" width="2" height="2" fill="#e87d0d"/>
+  </svg><span class="stop-icon">■</span></div>
 
   <div class="aizuchi-area">
     <div class="aizuchi-text" id="aizuchiText"></div>
