@@ -1576,6 +1576,19 @@ function showCopyToast() {
   copyToastTimer = setTimeout(() => el.classList.remove('show'), 1500);
 }
 
+function copyLineTapped(target) {
+  const line = target.closest('.modal-line');
+  if (!line) return;
+  const s = line.querySelector('span');
+  const txt = s ? s.textContent : line.textContent;
+  navigator.clipboard.writeText(txt).then(() => showCopyToast()).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); showCopyToast();
+  });
+}
+
 function initModalCopy() {
   const body = document.getElementById('modalBody');
   if (!body) return;
@@ -1586,16 +1599,16 @@ function initModalCopy() {
     const now = Date.now();
     if (now - lastTapTime < 400) {
       e.preventDefault();
-      copyModalText();
+      copyLineTapped(e.target);
       lastTapTime = 0;
     } else {
       lastTapTime = now;
     }
   });
 
-  // PC: ダブルクリック → 全文コピー
+  // PC: ダブルクリック → その行コピー
   body.addEventListener('dblclick', (e) => {
     e.preventDefault();
-    copyModalText();
+    copyLineTapped(e.target);
   });
 }
