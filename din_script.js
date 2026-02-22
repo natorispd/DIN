@@ -925,7 +925,7 @@ function openModal(id, skipOverlay) {
 
 function renderModalLines(text) {
   const body = document.getElementById('modalBody');
-  const lines = text.split('\n');
+  const lines = text.split('\n').filter(l => l.trim().length > 0);
   body.innerHTML = '';
   lines.forEach((line) => {
     const div = document.createElement('div');
