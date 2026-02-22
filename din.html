@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Dreaming Idea Note</title>
-<script src="voice_data.js"></script>
+<title>Dreaming Idea Note - 無料版</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;700&display=swap');
 
@@ -18,6 +17,8 @@
     --danger: #c04040;
     --card: rgba(255,255,255,0.04);
     --border: rgba(255,255,255,0.06);
+    --fs: 2;
+    --fs-text: 2;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -86,7 +87,7 @@
     z-index:2;
   }
   .aizuchi-text {
-    font-size:1.3rem;
+    font-size:calc(1.3rem * var(--fs));
     color:#f0c040;
     font-weight:300;
     opacity:0;
@@ -105,7 +106,7 @@
   /* タイマー */
   .timer {
     position:fixed; top:20px; right:20px;
-    font-size:0.75rem; color:#a08020;
+    font-size:calc(0.75rem * var(--fs)); color:#a08020;
     font-variant-numeric: tabular-nums;
     opacity:0; transition: opacity 0.3s;
     z-index:3;
@@ -115,7 +116,7 @@
   /* 録音インジケータ */
   .rec-label {
     position:fixed; top:20px; left:20px;
-    font-size:0.75rem; font-weight:700;
+    font-size:calc(0.75rem * var(--fs)); font-weight:700;
     color:#cc3333; letter-spacing:0.1em;
     opacity:0; transition: opacity 0.3s;
     z-index:3;
@@ -131,7 +132,7 @@
     position:fixed;
     top:50%; left:50%;
     transform:translate(-50%,-50%);
-    font-size:2.5rem;
+    font-size:calc(2.5rem * var(--fs));
     color:rgba(240,192,64,0.5);
     pointer-events:none;
     z-index:1;
@@ -170,13 +171,27 @@
   /* 待機時のヒント */
   .hint {
     text-align:center;
-    font-size:0.8rem;
+    font-size:calc(0.8rem * var(--fs));
     color:var(--text-dim);
     font-weight:300;
     transition: opacity 0.5s;
     padding-bottom:16px;
   }
   .hint.hide { opacity:0; pointer-events:none; }
+
+  /* 無料版バッジ */
+  .free-badge {
+    display:inline-block;
+    background:rgba(240,192,64,0.15);
+    border:1px solid rgba(240,192,64,0.3);
+    color:var(--accent);
+    font-size:calc(0.6rem * var(--fs));
+    font-weight:700;
+    padding:2px 10px;
+    border-radius:20px;
+    margin-top:8px;
+    letter-spacing:0.05em;
+  }
 
   /* スワイプインジケータ */
   .swipe-hint {
@@ -236,7 +251,7 @@
     padding:12px 0;
     background:none; border:none;
     color:var(--text-dim);
-    font-family:inherit; font-size:0.8rem;
+    font-family:inherit; font-size:calc(0.8rem * var(--fs));
     cursor:pointer;
     border-bottom:2px solid transparent;
     transition: all 0.2s;
@@ -257,16 +272,16 @@
     cursor:pointer; transition: background 0.2s;
   }
   .record-card:active { background:rgba(255,255,255,0.07); }
-  .record-date { font-size:0.68rem; color:var(--text-dim); margin-bottom:5px; }
+  .record-date { font-size:calc(0.68rem * var(--fs)); color:var(--text-dim); margin-bottom:5px; }
   .record-preview {
-    font-size:0.82rem; line-height:1.6;
+    font-size:calc(0.82rem * var(--fs-text)); line-height:1.6;
     display:-webkit-box; -webkit-line-clamp:3;
     -webkit-box-orient:vertical; overflow:hidden;
     white-space:pre-wrap;
   }
   .record-empty {
     text-align:center; color:var(--text-dim);
-    padding:40px 0; font-size:0.85rem;
+    padding:40px 0; font-size:calc(0.85rem * var(--fs));
   }
 
   /* 設定 */
@@ -275,25 +290,25 @@
     border-radius:12px; padding:14px; margin-bottom:10px;
   }
   .setting-title {
-    font-size:0.75rem; font-weight:700; margin-bottom:10px;
+    font-size:calc(0.75rem * var(--fs)); font-weight:700; margin-bottom:10px;
     color:var(--accent);
   }
   .setting-item { margin-bottom:10px; }
   .setting-item:last-child { margin-bottom:0; }
-  .setting-label { font-size:0.78rem; margin-bottom:4px; }
-  .setting-desc { font-size:0.68rem; color:var(--text-dim); margin-bottom:4px; }
+  .setting-label { font-size:calc(0.78rem * var(--fs)); margin-bottom:4px; }
+  .setting-desc { font-size:calc(0.68rem * var(--fs)); color:var(--text-dim); margin-bottom:4px; }
   input[type="number"], select, input[type="text"] {
     width:100%; padding:9px 11px;
     background:rgba(0,0,0,0.3); border:1px solid var(--border);
     border-radius:8px; color:var(--text);
-    font-family:inherit; font-size:0.82rem;
+    font-family:inherit; font-size:calc(0.82rem * var(--fs));
   }
   select { appearance:none; }
   input:focus, select:focus { outline:none; border-color:var(--accent-dim); }
 
   .btn {
     padding:10px 20px; border:none; border-radius:8px;
-    font-family:inherit; font-size:0.8rem; cursor:pointer;
+    font-family:inherit; font-size:calc(0.8rem * var(--fs)); cursor:pointer;
     transition: opacity 0.2s;
   }
   .btn:active { opacity:0.7; }
@@ -326,21 +341,65 @@
     display:flex; justify-content:space-between; align-items:center;
     margin-bottom:16px;
   }
-  .modal-date { font-size:0.75rem; color:var(--text-dim); }
+  .modal-date { font-size:calc(0.75rem * var(--fs)); color:var(--text-dim); }
   .modal-close {
     background:none; border:none; color:var(--text-dim);
-    font-size:1.3rem; cursor:pointer; padding:4px 8px;
+    font-size:calc(1.3rem * var(--fs)); cursor:pointer; padding:4px 8px;
   }
   .modal-body {
-    font-size:0.9rem; line-height:1.8;
+    font-size:calc(0.9rem * var(--fs-text)); line-height:1.8;
     white-space:pre-wrap;
+    user-select:text;
+    -webkit-user-select:text;
+    cursor:text;
+  }
+
+  .copy-toast {
+    position:fixed;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%) scale(0.8);
+    background:rgba(240,192,64,0.95);
+    color:#000;
+    padding:12px 28px;
+    border-radius:12px;
+    font-size:calc(0.85rem * var(--fs));
+    font-weight:700;
+    z-index:300;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .copy-toast.show {
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
   }
   .modal-delete {
     margin-top:20px; padding:10px;
     background:none; border:1px solid var(--danger);
     color:var(--danger); border-radius:8px;
-    width:100%; font-family:inherit; font-size:0.8rem;
+    width:100%; font-family:inherit; font-size:calc(0.8rem * var(--fs));
     cursor:pointer;
+  }
+  .modal-position {
+    font-size:calc(0.68rem * var(--fs));
+    color:var(--text-dim);
+    font-variant-numeric:tabular-nums;
+  }
+  @keyframes slideOutLeft {
+    from { transform:translateX(0); opacity:1; }
+    to { transform:translateX(-30%); opacity:0; }
+  }
+  @keyframes slideOutRight {
+    from { transform:translateX(0); opacity:1; }
+    to { transform:translateX(30%); opacity:0; }
+  }
+  @keyframes slideInLeft {
+    from { transform:translateX(-30%); opacity:0; }
+    to { transform:translateX(0); opacity:1; }
+  }
+  @keyframes slideInRight {
+    from { transform:translateX(30%); opacity:0; }
+    to { transform:translateX(0); opacity:1; }
   }
 </style>
 </head>
@@ -362,8 +421,9 @@
   <div class="text-area" id="textArea">
     <div id="textSpacer" style="flex:1 1 auto;min-height:60%"></div>
     <div class="hint" id="hint">
-      <div style="font-size:1.1rem;margin-bottom:12px;color:var(--text);font-weight:700">Dreaming Idea Note</div>
-      <div style="line-height:2.0" id="hintText">
+      <div style="font-size:calc(1.1rem * var(--fs));margin-bottom:12px;color:var(--text);font-weight:700">Dreaming Idea Note</div>
+      <div class="free-badge">無料版 / Free</div>
+      <div style="line-height:2.0;margin-top:12px;" id="hintText">
         タップ：録音開始 / 停止<br>
         スワイプ↑：設定・記録一覧
       </div>
@@ -391,8 +451,19 @@
       <div class="setting-section">
         <div class="setting-title">🌐 言語 / Language</div>
         <div style="display:flex;gap:8px;">
-          <button class="btn" id="langJa" style="flex:1;background:var(--accent);color:#000;font-weight:700;font-size:0.8rem;" onclick="setLang('ja')">日本語</button>
-          <button class="btn" id="langEn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.8rem;" onclick="setLang('en')">English</button>
+          <button class="btn" id="langJa" style="flex:1;background:var(--accent);color:#000;font-weight:700;" onclick="setLang('ja')">日本語</button>
+          <button class="btn" id="langEn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="setLang('en')">English</button>
+        </div>
+      </div>
+      <div class="setting-section">
+        <div class="setting-title" id="title-fontsize">🔤 文字サイズ</div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-fs">UI 倍率（<span id="fsValue">2.0</span>x）</div>
+          <input type="range" id="fontScale" min="0.5" max="4" step="0.1" value="2" style="width:100%;accent-color:var(--accent);" oninput="previewFontScale()">
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-fsText">テキスト倍率（<span id="fsTextValue">2.0</span>x）</div>
+          <input type="range" id="fontScaleText" min="0.5" max="5" step="0.1" value="2" style="width:100%;accent-color:var(--accent);" oninput="previewFontScaleText()">
         </div>
       </div>
       <div class="setting-section">
@@ -416,14 +487,46 @@
         <div class="setting-title" id="title-chara">🎤 キャラクター</div>
         <div class="setting-item">
           <div class="setting-label" id="label-chara">合いの手キャラ</div>
-          <div class="setting-desc" id="desc-voicedata">voice_data.js が必要です</div>
+          <div class="setting-desc" id="desc-voicedata">無料版はTTS（ブラウザ音声合成）のみ対応</div>
           <select id="charSelect">
             <option value="" id="opt-none">なし（TTS）</option>
+            <option value="__silent__" id="opt-silent">無音（テキストのみ）</option>
+            <option disabled style="color:#555;">── 以下は有料版で利用可能 ──</option>
+            <option disabled style="color:#555;">ずんだもん</option>
+            <option disabled style="color:#555;">四国めたん</option>
+            <option disabled style="color:#555;">春日部つむぎ</option>
+            <option disabled style="color:#555;">雨晴はう</option>
+            <option disabled style="color:#555;">波音リツ</option>
+            <option disabled style="color:#555;">玄野武宏</option>
+            <option disabled style="color:#555;">白上虎太郎</option>
+            <option disabled style="color:#555;">青山龍星</option>
+            <option disabled style="color:#555;">冥鳴ひまり</option>
+            <option disabled style="color:#555;">九州そら</option>
+          </select>
+          <div style="margin-top:10px;">
+            <a href="https://github.com/natorispd/DIN" target="_blank"
+               style="color:var(--accent);font-size:calc(0.72rem * var(--fs));text-decoration:none;">
+              🔗 キャラクター音声付き有料版について
+            </a>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-vol">音量（<span id="volValue">80</span>%）</div>
+          <input type="range" id="voiceVolume" min="0" max="100" step="5" value="80" style="width:100%;accent-color:var(--accent);" oninput="previewVolume()">
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-ttsVoice">TTS 声の種類</div>
+          <select id="ttsVoiceSelect" style="width:100%;">
+            <option value="">デフォルト</option>
           </select>
         </div>
         <div class="setting-item">
-          <div class="setting-label" id="label-vol">音量（0〜1）</div>
-          <input type="number" id="voiceVolume" min="0" max="1" step="0.1" value="0.8">
+          <div class="setting-label" id="label-ttsPitch">TTS 高さ（<span id="ttsPitchValue">1.0</span>）</div>
+          <input type="range" id="ttsPitch" min="0.5" max="2" step="0.1" value="1" style="width:100%;accent-color:var(--accent);" oninput="previewTTSPitch()">
+        </div>
+        <div class="setting-item">
+          <div class="setting-label" id="label-ttsRate">TTS 速さ（<span id="ttsRateValue">1.0</span>）</div>
+          <input type="range" id="ttsRate" min="0.5" max="2" step="0.1" value="1" style="width:100%;accent-color:var(--accent);" oninput="previewTTSRate()">
         </div>
         <div class="setting-item">
           <div class="setting-label" id="label-delay">合いの手の遅延（秒）</div>
@@ -431,7 +534,7 @@
         </div>
         <div class="setting-item">
           <div class="setting-label" id="label-startPhrase">開始フレーズ（TTS）</div>
-          <div class="setting-desc" id="desc-startPhrase">WAVキャラ未選択時に使用</div>
+          <div class="setting-desc" id="desc-startPhrase">録音開始時に読み上げるフレーズ</div>
           <select id="startPhrase">
             <option value="なぁに？">なぁに？</option>
             <option value="聞いてるよ">聞いてるよ</option>
@@ -447,7 +550,7 @@
         </div>
         <div class="setting-item">
           <div class="setting-label" id="label-endPhrase">終了フレーズ（TTS）</div>
-          <div class="setting-desc" id="desc-endPhrase">WAVキャラ未選択時に使用</div>
+          <div class="setting-desc" id="desc-endPhrase">録音終了時に読み上げるフレーズ</div>
           <select id="endPhrase">
             <option value="記録しました">記録しました</option>
             <option value="おっけーです">おっけーです</option>
@@ -482,8 +585,8 @@
       <div class="setting-section">
         <div class="setting-title" id="title-export">📤 エクスポート（全件）</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportAll('json')">JSON</button>
-          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportAll('csv')">CSV</button>
+          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportAll('json')">JSON</button>
+          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportAll('csv')">CSV</button>
         </div>
       </div>
       <div class="setting-section">
@@ -502,13 +605,16 @@
       </div>
       <div class="setting-section">
         <div class="setting-title">© クレジット</div>
-        <div id="creditText" style="font-size:0.6rem;color:var(--text-dim);line-height:1.8;">
-          音声合成：<a href="https://voicevox.hiroshiba.jp/" target="_blank" style="color:var(--accent-dim);text-decoration:none;">VOICEVOX</a><br>
+        <div id="creditText" style="font-size:calc(0.6rem * var(--fs));color:var(--text-dim);line-height:1.8;">
+          キャラクター音声：<a href="https://voicevox.hiroshiba.jp/" target="_blank" style="color:var(--accent-dim);text-decoration:none;">VOICEVOX</a>（有料版で利用可能）<br>
           <a href="https://voicevox.hiroshiba.jp/term/" target="_blank" style="color:var(--text-dim);text-decoration:none;">VOICEVOX 利用規約</a>
         </div>
       </div>
-      <div style="text-align:center;padding:8px 0 4px;font-size:0.55rem;color:var(--text-dim);opacity:0.5;">
+      <div style="text-align:center;padding:8px 0 4px;font-size:calc(0.55rem * var(--fs));color:var(--text-dim);opacity:0.5;">
         Natori Satio © 2026
+      </div>
+      <div style="text-align:center;padding:4px 0 12px;font-size:calc(0.7rem * var(--fs));color:var(--text-dim);opacity:0.7;">
+        v2026.02.22-2200 (Free)
       </div>
     </div>
   </div>
@@ -519,16 +625,20 @@
   <div class="modal-content">
     <div class="modal-header">
       <div class="modal-date" id="modalDate"></div>
+      <div class="modal-position" id="modalPosition"></div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportSingle('txt')">TXT</button>
-      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-size:0.75rem;" onclick="exportSingle('md')">Markdown</button>
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="copyModalText()">📋</button>
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSingle('txt')">TXT</button>
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSingle('md')">Markdown</button>
     </div>
     <button class="modal-delete" id="modalDelete" style="margin-top:8px;">この記録を削除</button>
   </div>
 </div>
+
+<div class="copy-toast" id="copyToast">コピーしました</div>
 
 <script src="din_script.js"></script>
 </body>
