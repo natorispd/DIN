@@ -974,6 +974,7 @@ function saveModalText() {
 function closeModal() {
   selectedLine = null;
   document.getElementById('modal').classList.remove('show');
+  renderList();
 }
 
 function navigateModal(direction) {
