@@ -289,9 +289,10 @@
     background:rgba(0,0,0,0.3); border:1px solid var(--border);
     border-radius:8px; color:var(--text);
     font-family:inherit; font-size:calc(0.82rem * var(--fs));
+    transition: border 0.2s;
   }
   select { appearance:none; }
-  input:focus, select:focus { outline:none; border-color:var(--accent-dim); }
+  input:focus, select:focus { outline:none; border:2px solid var(--accent-dim); padding:8px 10px; }
 
   .btn {
     padding:10px 20px; border:none; border-radius:8px;
