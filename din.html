@@ -354,6 +354,16 @@
     -webkit-user-select:text;
     cursor:text;
   }
+  .modal-line {
+    padding:4px 8px;
+    border-radius:6px;
+    cursor:pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .modal-line.selected {
+    background:var(--accent);
+    color:#000;
+  }
 
   .copy-toast {
     position:fixed;
@@ -624,7 +634,7 @@
 
 <!-- 詳細モーダル -->
 <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-content">
+  <div class="modal-content" onclick="clearLineSelection()">
     <div class="modal-header">
       <div class="modal-date" id="modalDate"></div>
       <div class="modal-position" id="modalPosition"></div>

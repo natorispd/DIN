@@ -900,6 +900,7 @@ let modalTouchStartX = 0;
 let modalTouchStartY = 0;
 let modalTouchStartTime = 0;
 let modalSwiping = false;
+let selectedLine = null;
 
 function openModal(id, skipOverlay) {
   const records = getRecords();
@@ -909,18 +910,71 @@ function openModal(id, skipOverlay) {
   const d = new Date(r.date);
   document.getElementById('modalDate').textContent =
     `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  document.getElementById('modalBody').textContent = r.text;
+  renderModalLines(r.text);
   document.getElementById('modalDelete').onclick = () => {
     if (confirm('削除しますか？')) { deleteRecord(id); closeModal(); renderList(); }
   };
   const indicator = document.getElementById('modalPosition');
   if (indicator) indicator.textContent = `${idx + 1} / ${records.length}`;
   currentModalId = id;
+  selectedLine = null;
   if (!skipOverlay) {
     document.getElementById('modal').classList.add('show');
   }
 }
-function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+function renderModalLines(text) {
+  const body = document.getElementById('modalBody');
+  const lines = text.split('\n');
+  body.innerHTML = '';
+  lines.forEach((line) => {
+    const div = document.createElement('div');
+    div.className = 'modal-line';
+    div.textContent = line;
+    div.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleLineClick(div);
+    });
+    body.appendChild(div);
+  });
+}
+
+function handleLineClick(div) {
+  if (selectedLine === div) {
+    div.remove();
+    selectedLine = null;
+    saveModalText();
+  } else {
+    if (selectedLine) selectedLine.classList.remove('selected');
+    selectedLine = div;
+    div.classList.add('selected');
+  }
+}
+
+function clearLineSelection() {
+  if (selectedLine) {
+    selectedLine.classList.remove('selected');
+    selectedLine = null;
+  }
+}
+
+function saveModalText() {
+  if (!currentModalId) return;
+  const lines = [...document.getElementById('modalBody').querySelectorAll('.modal-line')]
+    .map(el => el.textContent);
+  const newText = lines.join('\n');
+  const records = getRecords();
+  const r = records.find(r => r.id === currentModalId);
+  if (r) {
+    r.text = newText;
+    localStorage.setItem('igt_records', JSON.stringify(records));
+  }
+}
+
+function closeModal() {
+  selectedLine = null;
+  document.getElementById('modal').classList.remove('show');
+}
 
 function navigateModal(direction) {
   const records = getRecords();
