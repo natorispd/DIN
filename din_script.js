@@ -1,3 +1,6 @@
+// ============ VERSION ============
+const APP_VERSION = 'v2026.02.22-1500';
+
 // ============ STATE ============
 let isRecording = false;
 let recognition = null;
@@ -387,6 +390,8 @@ window.addEventListener('load', () => {
   loadTTSVoices(); // TTS音声を事前読み込み
   initModalSwipe(); // モーダル横スワイプ
   initModalCopy(); // モーダル長押し/ダブルタップでコピー
+  // バージョン番号を自動反映
+  document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 });
 
 // ============ RECORDING ============
