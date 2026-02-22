@@ -486,6 +486,167 @@ function cleanTranscript(text) {
   return result;
 }
 
+// ============ SEISHO (清書) ============
+const FILLER_PATTERNS = [
+  /[えエ][ー～〜]+[っとト]/g,
+  /[えエ][っとト]/g,
+  /[あア][のノ][ー～〜]+/g,
+  /[そソ][のノ][ー～〜]+/g,
+  /なんていうか/g,
+  /なんだろう/g,
+  /[っ]?て[いー]*う?か/g,
+  /[そソ][うウ][でデ][すス][ねネ][ー～〜]?/g,
+  /[なナ][んン][かカ]/g,
+  /[えエ][ー～〜]+/g,
+  /[まマ][あァ][ー～〜]*/g,
+  /[ほホ][らラ]/g,
+  /[やヤ][っ][ぱパ][りリ]?/g,
+  /[うウ][ー～〜]+[んン]/g,
+  /[うウ][ー～〜]+/g,
+  /[あア][ー～〜]+/g,
+];
+
+function removeFillers(text) {
+  let r = text;
+  for (const p of FILLER_PATTERNS) r = r.replace(p, '');
+  r = r.replace(/[、]{2,}/g, '、');
+  r = r.replace(/^[、。]+/gm, '');
+  r = r.replace(/[ \t]{2,}/g, ' ');
+  return r.trim();
+}
+
+function splitSentences(text) {
+  const normalized = text.replace(/\n/g, ' ').trim();
+  const raw = normalized.split(/(?<=[。！？!?])/);
+  const CONJ_RE = /(?=[、,\s]*(?:あとは?[、,\s]|それから[、,\s]|それで[、,\s]|それと[、,\s]|つぎに[、,\s]|次に[、,\s]|また[、,\s]|そして[、,\s]|ちなみに[、,\s]|ところで[、,\s]))/;
+  const segments = [];
+  for (const chunk of raw) {
+    if (chunk.length > 60 && CONJ_RE.test(chunk)) {
+      segments.push(...chunk.split(CONJ_RE).filter(s => s.trim()));
+    } else {
+      if (chunk.trim()) segments.push(chunk.trim());
+    }
+  }
+  return segments;
+}
+
+function formatAsList(segments) {
+  if (!segments.length) return '<p style="color:var(--text-dim)">内容がありません</p>';
+  return '<ul class="seisho-list">' + segments.map(s => `<li>${escapeHtml(s)}</li>`).join('') + '</ul>';
+}
+
+function formatAsNarrative(segments) {
+  const CONN = ['', 'その時、', 'それから、', 'また、', 'さらに、', 'そして、', 'その後、', '加えて、', '最後に、'];
+  if (!segments.length) return '<p style="color:var(--text-dim)">内容がありません</p>';
+  const CONJ_START = /^(それから|それで|また|そして|さらに|ところで|ちなみに|でも|だけど|あと)/;
+  let html = '<div class="seisho-narrative">';
+  segments.forEach((seg, i) => {
+    let c = '';
+    if (i > 0 && !CONJ_START.test(seg)) {
+      c = (i === segments.length - 1 && segments.length > 2) ? '最後に、' : CONN[((i - 1) % (CONN.length - 1)) + 1];
+    }
+    html += `<p>${escapeHtml(c + seg)}</p>`;
+  });
+  return html + '</div>';
+}
+
+function formatAsPlain(cleanedText) {
+  if (!cleanedText) return '<p style="color:var(--text-dim)">内容がありません</p>';
+  const lines = cleanedText.split(/\n/).filter(l => l.trim());
+  return '<div class="seisho-plain">' + lines.map(l => escapeHtml(l)).join('\n') + '</div>';
+}
+
+let seishoActive = false;
+let seishoFormat = 'list';
+
+function toggleSeisho() {
+  seishoActive ? closeSeisho() : openSeisho();
+}
+
+function openSeisho() {
+  const r = getRecords().find(r => r.id === currentModalId);
+  if (!r) return;
+  seishoActive = true;
+  const cleaned = removeFillers(r.text);
+  const segments = splitSentences(cleaned);
+  document.getElementById('modalBody').style.display = 'none';
+  document.getElementById('seishoView').style.display = 'block';
+  document.getElementById('modalActions').style.display = 'none';
+  document.getElementById('seishoView').dataset.segments = JSON.stringify(segments);
+  document.getElementById('seishoView').dataset.cleanedText = cleaned;
+  renderSeishoOutput(segments, cleaned);
+  updateSeishoFormatButtons();
+  const btn = document.getElementById('btnSeisho');
+  if (btn) btn.classList.add('active');
+}
+
+function closeSeisho() {
+  seishoActive = false;
+  document.getElementById('modalBody').style.display = 'block';
+  document.getElementById('seishoView').style.display = 'none';
+  document.getElementById('modalActions').style.display = 'flex';
+  const btn = document.getElementById('btnSeisho');
+  if (btn) btn.classList.remove('active');
+}
+
+function renderSeishoOutput(segments, cleanedText) {
+  const el = document.getElementById('seishoOutput');
+  if (seishoFormat === 'list') el.innerHTML = formatAsList(segments);
+  else if (seishoFormat === 'narrative') el.innerHTML = formatAsNarrative(segments);
+  else el.innerHTML = formatAsPlain(cleanedText || '');
+}
+
+function switchSeishoFormat(fmt) {
+  seishoFormat = fmt;
+  const sv = document.getElementById('seishoView');
+  const segments = JSON.parse(sv.dataset.segments || '[]');
+  const cleaned = sv.dataset.cleanedText || '';
+  renderSeishoOutput(segments, cleaned);
+  updateSeishoFormatButtons();
+}
+
+function updateSeishoFormatButtons() {
+  document.getElementById('btnFormatList').classList.toggle('active', seishoFormat === 'list');
+  document.getElementById('btnFormatNarrative').classList.toggle('active', seishoFormat === 'narrative');
+  document.getElementById('btnFormatPlain').classList.toggle('active', seishoFormat === 'plain');
+}
+
+function copySeishoText() {
+  const el = document.getElementById('seishoOutput');
+  const text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(() => showCopyToast()).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); showCopyToast();
+  });
+}
+
+function exportSeisho(fmt) {
+  const r = getRecords().find(r => r.id === currentModalId);
+  if (!r) return;
+  const sv = document.getElementById('seishoView');
+  const segments = JSON.parse(sv.dataset.segments || '[]');
+  const cleaned = sv.dataset.cleanedText || '';
+  const d = new Date(r.date);
+  const date = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const slug = date.replace(/[\/: ]/g, '-');
+  if (fmt === 'txt') {
+    let text;
+    if (seishoFormat === 'list') text = segments.map((s, i) => `${i + 1}. ${s}`).join('\n');
+    else if (seishoFormat === 'narrative') text = segments.join('\n\n');
+    else text = cleaned;
+    downloadFile(`igt_seisho_${slug}.txt`, `${date}\n\n${text}`, 'text/plain');
+  } else if (fmt === 'md') {
+    let md;
+    if (seishoFormat === 'list') md = segments.map(s => `- ${s}`).join('\n');
+    else if (seishoFormat === 'narrative') md = segments.join('\n\n');
+    else md = cleaned;
+    const dur = r.duration ? `${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,'0')}` : '';
+    downloadFile(`igt_seisho_${slug}.md`, `# ${date}${dur ? ' ('+dur+')' : ''}\n\n${md}\n`, 'text/markdown');
+  }
+}
+
 // ============ SPEECH RECOGNITION ============
 function startRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -925,6 +1086,7 @@ function openModal(id, skipOverlay) {
   if (indicator) indicator.textContent = `${idx + 1} / ${records.length}`;
   currentModalId = id;
   selectedLine = null;
+  if (seishoActive) closeSeisho();
   if (!skipOverlay) {
     document.getElementById('modal').classList.add('show');
   }
@@ -986,6 +1148,7 @@ function saveModalText() {
 
 function closeModal() {
   selectedLine = null;
+  if (seishoActive) closeSeisho();
   document.getElementById('modal').classList.remove('show');
   renderList();
 }
@@ -1256,6 +1419,11 @@ const I18N = {
     'desc-howto': '画面タップ → 録音開始/停止<br>スワイプ上 → 記録一覧・設定<br><br>音声認識にはインターネット接続が必要です<br>※ Chrome / Edge 推奨',
     'desc-voicedata': 'voice_data.js が必要です',
     modalDelete: 'この記録を削除',
+    btnSeisho: '✨ 清書',
+    btnFormatList: '📝 箇条書き',
+    btnFormatNarrative: '📖 物語',
+    btnFormatPlain: '📄 プレーン',
+    copySeisho: 'コピー',
   },
   en: {
     hintText: 'Tap: Start / Stop recording<br>Swipe up: Settings & records',
@@ -1295,6 +1463,11 @@ const I18N = {
     'desc-howto': 'Tap → Start / Stop recording<br>Swipe up → Records & settings<br><br>Internet connection required for speech recognition<br>※ Chrome / Edge recommended',
     'desc-voicedata': 'voice_data.js required',
     modalDelete: 'Delete this record',
+    btnSeisho: '✨ Clean Up',
+    btnFormatList: '📝 Bullet List',
+    btnFormatNarrative: '📖 Narrative',
+    btnFormatPlain: '📄 Plain',
+    copySeisho: 'Copy',
   }
 };
 
@@ -1313,6 +1486,11 @@ function setLang(lang) {
     if (id === 'hintText' || id === 'modalDelete') return;
     const el = document.getElementById(id);
     if (el) el.innerHTML = d[id];
+  });
+  // data-i18n属性
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (d[key]) el.textContent = d[key];
   });
   // スライダーのspan値を再反映（innerHTML上書きでリセットされるため）
   const volEl = document.getElementById('volValue');
