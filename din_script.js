@@ -961,7 +961,13 @@ function clearLineSelection() {
 function saveModalText() {
   if (!currentModalId) return;
   const lines = [...document.getElementById('modalBody').querySelectorAll('.modal-line')]
-    .map(el => el.textContent);
+    .map(el => el.textContent).filter(l => l.trim().length > 0);
+  if (lines.length === 0) {
+    deleteRecord(currentModalId);
+    closeModal();
+    renderList();
+    return;
+  }
   const newText = lines.join('\n');
   const records = getRecords();
   const r = records.find(r => r.id === currentModalId);
