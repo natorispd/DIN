@@ -972,6 +972,37 @@ function initModalSwipe() {
     }
     modalSwiping = false;
   }, { passive:true });
+
+  // PC マウスドラッグで左右スワイプ
+  let mouseDown = false;
+  mc.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    modalTouchStartX = e.clientX;
+    modalTouchStartY = e.clientY;
+    modalTouchStartTime = Date.now();
+    modalSwiping = false;
+    mouseDown = true;
+  });
+  mc.addEventListener('mousemove', (e) => {
+    if (!mouseDown || !currentModalId) return;
+    const dx = e.clientX - modalTouchStartX;
+    const dy = e.clientY - modalTouchStartY;
+    if (!modalSwiping && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      modalSwiping = true;
+    }
+  });
+  mc.addEventListener('mouseup', (e) => {
+    if (!mouseDown || !currentModalId) return;
+    mouseDown = false;
+    const dx = e.clientX - modalTouchStartX;
+    const dy = e.clientY - modalTouchStartY;
+    const dt = Date.now() - modalTouchStartTime;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 500) {
+      navigateModal(dx < 0 ? 1 : -1);
+    }
+    modalSwiping = false;
+  });
+  mc.addEventListener('mouseleave', () => { mouseDown = false; });
 }
 
 // ============ EXPORT (Windows対応) ============

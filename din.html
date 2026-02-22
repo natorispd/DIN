@@ -583,12 +583,13 @@
       <div class="setting-section">
         <div class="btn btn-accent" id="btn-save" style="width:100%" onclick="saveSettings()">設定を保存</div>
       </div>
-      <div class="setting-section">
+      <div class="setting-section" style="opacity:0.35;pointer-events:none;">
         <div class="setting-title" id="title-export">📤 エクスポート（全件）</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportAll('json')">JSON</button>
-          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportAll('csv')">CSV</button>
+          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);" disabled>JSON</button>
+          <button class="btn" style="flex:1;min-width:60px;background:rgba(255,255,255,0.07);color:var(--text);" disabled>CSV</button>
         </div>
+        <div class="setting-desc" style="text-align:center;margin-top:8px;">有料版で利用できます</div>
       </div>
       <div class="setting-section">
         <div class="setting-title" id="title-data">🗑 データ管理</div>
@@ -615,7 +616,7 @@
         Natori Satio © 2026
       </div>
       <div style="text-align:center;padding:4px 0 12px;font-size:calc(0.7rem * var(--fs));color:var(--text-dim);opacity:0.7;">
-        v2026.02.22-1206 (Free)
+        v2026.02.22-1220 (Free)
       </div>
     </div>
   </div>
