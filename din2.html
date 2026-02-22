@@ -389,64 +389,6 @@
     from { transform:translateX(30%); opacity:0; }
     to { transform:translateX(0); opacity:1; }
   }
-
-  /* === SEISHO (清書) === */
-  .seisho-btn.active {
-    background: var(--accent) !important;
-    color: #000 !important;
-  }
-  .seisho-format-btn {
-    background: rgba(255,255,255,0.07);
-    color: var(--text);
-    border: 1px solid transparent;
-    transition: all 0.2s;
-    font-size: calc(0.72rem * var(--fs));
-    padding: 6px 0;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .seisho-format-btn.active {
-    background: rgba(240,192,64,0.15);
-    color: var(--accent);
-    border-color: var(--accent);
-  }
-  .seisho-output {
-    font-size: calc(0.9rem * var(--fs-text));
-    line-height: 1.8;
-    white-space: pre-wrap;
-    user-select: text;
-    -webkit-user-select: text;
-    cursor: text;
-    overflow-y: auto;
-    max-height: 50dvh;
-  }
-  .seisho-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  .seisho-list li {
-    padding: 6px 0 6px 1.2em;
-    position: relative;
-    border-bottom: 1px solid var(--border);
-  }
-  .seisho-list li:last-child { border-bottom: none; }
-  .seisho-list li::before {
-    content: '•';
-    color: var(--accent);
-    font-weight: 700;
-    position: absolute;
-    left: 0;
-  }
-  .seisho-narrative p {
-    margin-bottom: 0.8em;
-    text-indent: 1em;
-  }
-  .seisho-narrative p:last-child { margin-bottom: 0; }
-  .seisho-plain {
-    white-space: pre-wrap;
-    line-height: 2;
-  }
 </style>
 </head>
 <body>
@@ -656,33 +598,10 @@
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modalBody"></div>
-    <!-- 清書ビュー -->
-    <div id="seishoView" style="display:none;">
-      <div id="seishoControls" style="display:flex;gap:8px;margin-bottom:12px;">
-        <button class="seisho-format-btn active" id="btnFormatList" onclick="switchSeishoFormat('list')" style="flex:1;">
-          <span data-i18n="btnFormatList">📝 箇条書き</span>
-        </button>
-        <button class="seisho-format-btn" id="btnFormatNarrative" onclick="switchSeishoFormat('narrative')" style="flex:1;">
-          <span data-i18n="btnFormatNarrative">📖 物語</span>
-        </button>
-        <button class="seisho-format-btn" id="btnFormatPlain" onclick="switchSeishoFormat('plain')" style="flex:1;">
-          <span data-i18n="btnFormatPlain">📄 プレーン</span>
-        </button>
-      </div>
-      <div id="seishoOutput" class="seisho-output"></div>
-      <div style="display:flex;gap:8px;margin-top:12px;">
-        <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="copySeishoText()">📋 <span data-i18n="copySeisho">コピー</span></button>
-        <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSeisho('txt')">TXT</button>
-        <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSeisho('md')">MD</button>
-      </div>
-    </div>
-    <div id="modalActions" style="display:flex;gap:8px;margin-top:16px;">
+    <div style="display:flex;gap:8px;margin-top:16px;">
       <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="copyModalText()">📋</button>
-      <button class="btn seisho-btn" id="btnSeisho" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);font-weight:700;" onclick="toggleSeisho()">
-        <span data-i18n="btnSeisho">✨ 清書</span>
-      </button>
       <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSingle('txt')">TXT</button>
-      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSingle('md')">MD</button>
+      <button class="btn" style="flex:1;background:rgba(255,255,255,0.07);color:var(--text);" onclick="exportSingle('md')">Markdown</button>
     </div>
     <button class="modal-delete" id="modalDelete" style="margin-top:8px;">この記録を削除</button>
   </div>
