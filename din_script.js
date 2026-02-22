@@ -1104,7 +1104,7 @@ function renderModalLines(text) {
     div.appendChild(span);
     const reorder = document.createElement('div');
     reorder.className = 'line-reorder';
-    reorder.innerHTML = '<button onclick="moveLine(this,-1);event.stopPropagation()">▲</button><button onclick="moveLine(this,1);event.stopPropagation()">▼</button>';
+    reorder.innerHTML = '<button onclick="moveLine(this,-1);event.stopPropagation()">▲</button><button onclick="moveLine(this,1);event.stopPropagation()">▼</button><button onclick="deleteLine(this);event.stopPropagation()">🚮</button>';
     div.appendChild(reorder);
     div.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1130,15 +1130,17 @@ function moveLine(btn, direction) {
 }
 
 function handleLineClick(div) {
-  if (selectedLine === div) {
-    div.remove();
-    selectedLine = null;
-    saveModalText();
-  } else {
-    if (selectedLine) selectedLine.classList.remove('selected');
-    selectedLine = div;
-    div.classList.add('selected');
-  }
+  if (selectedLine === div) return;
+  if (selectedLine) selectedLine.classList.remove('selected');
+  selectedLine = div;
+  div.classList.add('selected');
+}
+
+function deleteLine(btn) {
+  const line = btn.closest('.modal-line');
+  line.remove();
+  selectedLine = null;
+  saveModalText();
 }
 
 function clearLineSelection() {
