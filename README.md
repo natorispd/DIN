@@ -22,6 +22,8 @@ Google Chrome / Microsoft Edge
 
 ![Icon](./Gemini_Generated_Image_x7hhufx7hhufx7hh.png)
 
+[使い方](./USAGE.md)
+
 技術的な仕組みの解説は [TECHNICAL.md](./TECHNICAL.md) を参照してください。
 
 [安全性について](https://github.com/natorispd/DIN/blob/main/techeasy.md)
