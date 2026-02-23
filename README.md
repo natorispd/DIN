@@ -2,7 +2,7 @@ Dreaming Idea Note (DIN)
 
 朝目覚めた瞬間、夢の記憶をメモするためのアプリ
 
-[使い方 / How To Use](./USAGE.md)
+[使い方](./USAGE.md) / [How To Use](./USAGE_EN.md)
 
 ## 無料版（TTS）
 
