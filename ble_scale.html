@@ -142,6 +142,9 @@ function buildPkt(type, data=[]){
 }
 
 /* ---- BLE Connection ---- */
+const MAX_RETRY = 5;
+const RETRY_DELAY = 2000; // ms
+
 async function toggleConn(){
   if(dev && dev.gatt.connected) return doDisconnect();
   await doConnect();
@@ -165,7 +168,21 @@ async function doConnect(){
     dev.addEventListener('gattserverdisconnected', onDisc);
     L(`発見: ${dev.name||'(名前なし)'} [${dev.id.slice(0,8)}]`,'i');
 
-    setStatus('busy','GATT接続中...');
+    // GATT接続（リトライ付き）
+    await connectGATT();
+
+  }catch(e){
+    L(`接続エラー: ${e.message}`,'e');
+    setStatus('','接続失敗');
+    $btn.disabled=false;
+  }
+}
+
+async function connectGATT(attempt=1){
+  try{
+    setStatus('busy',`GATT接続中... (${attempt}/${MAX_RETRY})`);
+    L(`GATT接続試行 ${attempt}/${MAX_RETRY}...`,'i');
+
     srv = await dev.gatt.connect();
     L('GATT接続完了','i');
 
@@ -188,10 +205,15 @@ async function doConnect(){
     $btn.disabled=false;
 
   }catch(e){
-    L(`接続エラー: ${e.message}`,'e');
+    L(`GATT失敗(${attempt}): ${e.message}`,'w');
+    if(attempt < MAX_RETRY){
+      L(`${RETRY_DELAY/1000}秒後にリトライ... 体重計を起こしておいてください`,'i');
+      await new Promise(r=>setTimeout(r, RETRY_DELAY));
+      return connectGATT(attempt+1);
+    }
+    L(`${MAX_RETRY}回失敗。体重計を起動してから再度「接続」を押してください`,'e');
     setStatus('','接続失敗');
     $btn.disabled=false;
-    doDisconnect();
   }
 }
 
