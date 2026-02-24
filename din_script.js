@@ -15,6 +15,7 @@ let aizuchiSpoken = [];
 let lastAizuchi = '';
 let drawerOpen = false;
 let lastSavedTranscript = '';
+let currentSessionRecordId = null;
 
 // ============ AIZUCHI SYSTEM ============
 const AIZUCHI_POOL = [
@@ -413,6 +414,7 @@ function startRecording() {
   lastAizuchi = '';
   timerSeconds = 0;
   lastSavedTranscript = '';
+  currentSessionRecordId = null;
 
   document.getElementById('bgOrb').className = 'bg-orb recording';
   document.getElementById('timer').classList.add('show');
@@ -449,9 +451,14 @@ function stopRecording() {
   let cleaned = cleanTranscript(fullTranscript);
   cleaned = cleaned.trim();
   if (cleaned.length > 0 && cleaned !== lastSavedTranscript) {
-    saveRecord(cleaned);
+    if (currentSessionRecordId) {
+      updateRecord(currentSessionRecordId, cleaned);
+    } else {
+      currentSessionRecordId = saveRecord(cleaned);
+    }
     lastSavedTranscript = cleaned;
   }
+  currentSessionRecordId = null;
 
   const endPhrase = getSettings().endPhrase || '記録しました';
   showAizuchi(endPhrase);
@@ -833,7 +840,11 @@ function resetAutoSaveTimer() {
     if (!isRecording) return;
     let cleaned = cleanTranscript(fullTranscript).trim();
     if (cleaned.length > 0 && cleaned !== lastSavedTranscript) {
-      saveRecord(cleaned);
+      if (currentSessionRecordId) {
+        updateRecord(currentSessionRecordId, cleaned);
+      } else {
+        currentSessionRecordId = saveRecord(cleaned);
+      }
       lastSavedTranscript = cleaned;
     }
   }, interval);
@@ -1034,6 +1045,16 @@ function saveRecord(text) {
   lastSaveId = id;
   records.unshift({ id, date:new Date().toISOString(), text, duration:timerSeconds });
   localStorage.setItem('igt_records', JSON.stringify(records));
+  return id;
+}
+function updateRecord(id, text) {
+  const records = getRecords();
+  const rec = records.find(r => r.id === id);
+  if (rec) {
+    rec.text = text;
+    rec.duration = timerSeconds;
+    localStorage.setItem('igt_records', JSON.stringify(records));
+  }
 }
 function deleteRecord(id) {
   let records = getRecords().filter(r => r.id !== id);
@@ -1325,7 +1346,13 @@ function exportAll(fmt) {
 window.addEventListener('beforeunload', () => {
   if (isRecording) {
     let cleaned = cleanTranscript(fullTranscript).trim();
-    if (cleaned.length > 0 && cleaned !== lastSavedTranscript) saveRecord(cleaned);
+    if (cleaned.length > 0 && cleaned !== lastSavedTranscript) {
+      if (currentSessionRecordId) {
+        updateRecord(currentSessionRecordId, cleaned);
+      } else {
+        saveRecord(cleaned);
+      }
+    }
   }
 });
 
