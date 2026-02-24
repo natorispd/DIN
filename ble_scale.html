@@ -91,7 +91,8 @@ button.ghost:hover{border-color:#6b7280;color:#e5e7eb}
 <div class="log-wrap">
   <div class="log-title">
     <span>通信ログ</span>
-    <button class="ghost" onclick="clearLog()" style="padding:4px 10px;font-size:.7rem">クリア</button>
+    <span><button class="ghost" onclick="copyLog()" style="padding:4px 10px;font-size:.7rem">コピー</button>
+    <button class="ghost" onclick="clearLog()" style="padding:4px 10px;font-size:.7rem">クリア</button></span>
   </div>
   <div class="log" id="log"></div>
 </div>
@@ -115,6 +116,13 @@ const $chk  = document.getElementById('chkAll');
 
 function setStatus(s, t){ $dot.className='dot '+ s; $stxt.textContent=t }
 function clearLog(){ $log.innerHTML='' }
+function copyLog(){
+  const txt=$log.innerText;
+  navigator.clipboard.writeText(txt).then(()=>L('ログをコピーしました','i')).catch(()=>{
+    // fallback
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();L('ログをコピーしました','i');
+  });
+}
 
 function L(m, cls=''){
   const ts = new Date().toLocaleTimeString('ja-JP',{hour12:false});
