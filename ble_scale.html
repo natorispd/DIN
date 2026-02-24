@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>BLE 体重計</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans',sans-serif;
+  background:#111827;color:#e5e7eb;
+  min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+  padding:24px 16px;
+}
+h1{font-size:1.2rem;font-weight:600;margin-bottom:16px;color:#9ca3af}
+
+/* Status */
+.status{display:flex;align-items:center;gap:8px;font-size:.85rem;color:#6b7280;margin-bottom:24px}
+.dot{width:9px;height:9px;border-radius:50%;background:#374151;flex-shrink:0}
+.dot.ok{background:#22c55e}
+.dot.busy{background:#f59e0b;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+
+/* Weight */
+.weight-box{
+  background:#1f2937;border-radius:20px;padding:32px 48px;text-align:center;
+  margin-bottom:32px;min-width:280px;
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+}
+.weight-num{font-size:4.5rem;font-weight:700;letter-spacing:-2px;font-variant-numeric:tabular-nums;color:#f9fafb;line-height:1.1}
+.weight-num.stale{color:#4b5563}
+.weight-unit{font-size:1.2rem;color:#6b7280;margin-left:4px}
+.weight-sub{font-size:.8rem;color:#4b5563;margin-top:8px}
+
+/* Buttons */
+.btn-row{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;justify-content:center}
+button{
+  background:#3b82f6;color:#fff;border:none;border-radius:10px;
+  padding:12px 28px;font-size:1rem;font-weight:600;cursor:pointer;
+  transition:background .15s;
+}
+button:hover{background:#2563eb}
+button:disabled{background:#374151;color:#6b7280;cursor:not-allowed}
+button.danger{background:#ef4444}
+button.danger:hover{background:#dc2626}
+button.ghost{background:transparent;border:1px solid #374151;color:#9ca3af;padding:10px 20px;font-size:.85rem}
+button.ghost:hover{border-color:#6b7280;color:#e5e7eb}
+
+/* Scan mode toggle */
+.scan-mode{font-size:.8rem;color:#6b7280;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.scan-mode label{cursor:pointer}
+.scan-mode input{accent-color:#3b82f6}
+
+/* Log */
+.log-wrap{width:100%;max-width:520px;margin-top:8px}
+.log-title{font-size:.8rem;color:#4b5563;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.log{
+  background:#0b0f19;border-radius:10px;padding:10px 12px;
+  font-family:'Cascadia Code','Fira Code','SF Mono',monospace;font-size:.7rem;color:#6ee7b7;
+  max-height:260px;overflow-y:auto;line-height:1.6;
+  white-space:pre-wrap;word-break:break-all;
+}
+.log .e{color:#f87171}
+.log .i{color:#60a5fa}
+.log .w{color:#fbbf24}
+</style>
+</head>
+<body>
+
+<h1>BLE 体重計リーダー</h1>
+
+<div class="status">
+  <span class="dot" id="dot"></span>
+  <span id="stxt">未接続</span>
+</div>
+
+<div class="weight-box">
+  <div><span class="weight-num stale" id="wval">--.-</span><span class="weight-unit">kg</span></div>
+  <div class="weight-sub" id="wsub"></div>
+</div>
+
+<div class="btn-row">
+  <button id="btnConn" onclick="toggleConn()">接続</button>
+</div>
+
+<div class="scan-mode">
+  <input type="checkbox" id="chkAll">
+  <label for="chkAll">全デバイスをスキャン（Service UUIDフィルタなし）</label>
+</div>
+
+<div class="log-wrap">
+  <div class="log-title">
+    <span>通信ログ</span>
+    <button class="ghost" onclick="clearLog()" style="padding:4px 10px;font-size:.7rem">クリア</button>
+  </div>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+/* ===== OKOK BLE Scale Protocol ===== */
+const SVC  = '0000ffb0-0000-1000-8000-00805f9b34fb';
+const CHW  = '0000ffb1-0000-1000-8000-00805f9b34fb';  // Write
+const CHN  = '0000ffb2-0000-1000-8000-00805f9b34fb';  // Notify
+
+let dev = null, srv = null, cW = null, cN = null;
+
+/* ---- UI refs ---- */
+const $dot  = document.getElementById('dot');
+const $stxt = document.getElementById('stxt');
+const $wval = document.getElementById('wval');
+const $wsub = document.getElementById('wsub');
+const $btn  = document.getElementById('btnConn');
+const $log  = document.getElementById('log');
+const $chk  = document.getElementById('chkAll');
+
+function setStatus(s, t){ $dot.className='dot '+ s; $stxt.textContent=t }
+function clearLog(){ $log.innerHTML='' }
+
+function L(m, cls=''){
+  const ts = new Date().toLocaleTimeString('ja-JP',{hour12:false});
+  const d = document.createElement('div');
+  if(cls) d.className = cls;
+  d.textContent = `[${ts}] ${m}`;
+  $log.appendChild(d);
+  $log.scrollTop = $log.scrollHeight;
+}
+
+function hex(buf){
+  return [...new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer || buf)]
+    .map(b=>b.toString(16).padStart(2,'0').toUpperCase()).join(' ');
+}
+
+/* ---- Protocol helpers ---- */
+function xorCheck(bytes){
+  let x=0; for(const b of bytes) x ^= b; return x & 0xFF;
+}
+
+function buildPkt(type, data=[]){
+  const pkt = [0xFD, type, data.length, ...data];
+  pkt.push(xorCheck(pkt));
+  return new Uint8Array(pkt);
+}
+
+/* ---- BLE Connection ---- */
+async function toggleConn(){
+  if(dev && dev.gatt.connected) return doDisconnect();
+  await doConnect();
+}
+
+async function doConnect(){
+  if(!navigator.bluetooth){
+    L('このブラウザはWeb Bluetooth非対応です','e');
+    return;
+  }
+  try{
+    setStatus('busy','スキャン中...');
+    $btn.disabled = true;
+    L('デバイススキャン開始...','i');
+
+    const opts = $chk.checked
+      ? { acceptAllDevices:true, optionalServices:[SVC] }
+      : { filters:[{services:[SVC]}] };
+
+    dev = await navigator.bluetooth.requestDevice(opts);
+    dev.addEventListener('gattserverdisconnected', onDisc);
+    L(`発見: ${dev.name||'(名前なし)'} [${dev.id.slice(0,8)}]`,'i');
+
+    setStatus('busy','GATT接続中...');
+    srv = await dev.gatt.connect();
+    L('GATT接続完了','i');
+
+    const svc = await srv.getPrimaryService(SVC);
+    cW = await svc.getCharacteristic(CHW);
+    cN = await svc.getCharacteristic(CHN);
+
+    await cN.startNotifications();
+    cN.addEventListener('characteristicvaluechanged', onNotify);
+    L('Notify購読開始','i');
+
+    // Sync command (0x31)
+    const sync = buildPkt(0x31);
+    L(`送信 Sync: ${hex(sync)}`,'i');
+    await cW.writeValue(sync);
+
+    setStatus('ok','接続済み — 体重計に乗ってください');
+    $btn.textContent='切断';
+    $btn.classList.add('danger');
+    $btn.disabled=false;
+
+  }catch(e){
+    L(`接続エラー: ${e.message}`,'e');
+    setStatus('','接続失敗');
+    $btn.disabled=false;
+    doDisconnect();
+  }
+}
+
+function doDisconnect(){
+  if(dev && dev.gatt.connected) dev.gatt.disconnect();
+  onDisc();
+}
+
+function onDisc(){
+  L('切断','i');
+  setStatus('','未接続');
+  $btn.textContent='接続';
+  $btn.classList.remove('danger');
+  $btn.disabled=false;
+  cW=cN=null;
+}
+
+/* ---- Receive & Parse ---- */
+function onNotify(ev){
+  const dv = ev.target.value;
+  const bytes = new Uint8Array(dv.buffer);
+  L(`受信 [${bytes.length}B]: ${hex(bytes)}`);
+
+  if(bytes.length < 3 || bytes[0] !== 0xFD){
+    L('不正パケット (ヘッダー≠FD)','w');
+    return;
+  }
+
+  const type = bytes[1];
+  // Checksum verify
+  const csExpect = xorCheck(bytes.slice(0,-1));
+  const csActual = bytes[bytes.length-1];
+  if(csExpect !== csActual){
+    L(`CS不一致: expect=${csExpect.toString(16).toUpperCase()} actual=${csActual.toString(16).toUpperCase()}  (加算剰余も試行)`,'w');
+    // Try additive checksum as fallback
+    let sum=0; for(let i=0;i<bytes.length-1;i++) sum+=bytes[i]; sum&=0xFF;
+    if(sum===csActual) L('→ 加算チェックサム(mod256)で一致','i');
+  }
+
+  switch(type){
+    case 0x31: parseInfo(bytes);  break;
+    case 0x32: parseWeight(bytes); break;
+    case 0x12: L('体組成データ(0x12)受信 — 今回は未処理','i'); break;
+    default:   L(`未知Type: 0x${type.toString(16).toUpperCase()}`,'w');
+  }
+}
+
+function parseInfo(b){
+  L('デバイス情報(0x31)受信','i');
+  // Log individual bytes for analysis
+  if(b.length>=6){
+    L(`  payload: ${hex(b.slice(3, b.length-1))}`,'i');
+  }
+}
+
+function parseWeight(b){
+  /*
+   * 0x32 パケット: FD 32 len [payload...] checksum
+   * ペイロードの正確なフォーマットはモデル依存。
+   * 複数のパース候補を表示して実機確認を助ける。
+   */
+  const payload = b.slice(3, b.length-1);  // checksum除く
+  L(`  payload(${payload.length}B): ${hex(payload)}`);
+
+  if(payload.length < 2){
+    L('  ペイロードが短すぎる','e');
+    return;
+  }
+
+  // ---- 候補生成 ----
+  const candidates = [];
+
+  // 候補A: byte[0]=unit?, byte[1-2]=weight big-endian /100 (0.01kg単位)
+  if(payload.length >= 3){
+    const rawA = (payload[1]<<8)|payload[2];
+    candidates.push({label:'A: p[1-2]/100', raw:rawA, kg:rawA/100});
+  }
+  // 候補B: byte[0-1]=weight big-endian /100
+  {
+    const rawB = (payload[0]<<8)|payload[1];
+    candidates.push({label:'B: p[0-1]/100', raw:rawB, kg:rawB/100});
+  }
+  // 候補C: /10 (0.1kg単位)
+  if(payload.length >= 3){
+    const rawC = (payload[1]<<8)|payload[2];
+    candidates.push({label:'C: p[1-2]/10',  raw:rawC, kg:rawC/10});
+  }
+  // 候補D: byte[0-1] /10
+  {
+    const rawD = (payload[0]<<8)|payload[1];
+    candidates.push({label:'D: p[0-1]/10',  raw:rawD, kg:rawD/10});
+  }
+  // 候補E: /200 (0.005kg = 5g単位, some models)
+  if(payload.length >= 3){
+    const rawE = (payload[1]<<8)|payload[2];
+    candidates.push({label:'E: p[1-2]/200', raw:rawE, kg:rawE/200});
+  }
+
+  L('  --- パース候補 ---');
+  let best = null;
+  for(const c of candidates){
+    const mark = (c.kg >= 10 && c.kg <= 200) ? ' ★' : '';
+    L(`  ${c.label} → raw=${c.raw} → ${c.kg.toFixed(2)} kg${mark}`);
+    if(!best && c.kg >= 10 && c.kg <= 200) best = c;
+  }
+
+  if(best){
+    $wval.textContent = best.kg.toFixed(1);
+    $wval.classList.remove('stale');
+    $wsub.textContent = `${best.label} | raw=${best.raw} | ${new Date().toLocaleTimeString('ja-JP',{hour12:false})}`;
+    L(`✓ 採用: ${best.kg.toFixed(1)} kg (${best.label})`,'i');
+  } else {
+    L('妥当な体重値(10-200kg)が見つからない — rawデータを確認','w');
+  }
+}
+
+/* ---- Send user info (for future body composition) ---- */
+async function sendUserInfo(gender=1, age=30, height=170){
+  if(!cW){ L('未接続','e'); return; }
+  const pkt = buildPkt(0x33, [gender, age, height]);
+  L(`送信 UserInfo: ${hex(pkt)}`,'i');
+  await cW.writeValue(pkt);
+}
+
+/* ---- Check Web Bluetooth support on load ---- */
+if(!navigator.bluetooth){
+  L('⚠ Web Bluetooth APIが利用できません。Chrome (PC/Android) をお使いください。','e');
+  $btn.disabled = true;
+}
+</script>
+</body>
+</html>
