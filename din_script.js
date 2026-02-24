@@ -1,5 +1,5 @@
 // ============ VERSION ============
-const APP_VERSION = 'v2026.02.25-2300';
+const APP_VERSION = 'v2026.02.26-0010';
 
 // ============ STATE ============
 let isRecording = false;
@@ -880,12 +880,12 @@ function isTTSEcho(recognized) {
   const r = norm(recognized);
   const t = norm(lastTTSText);
   if (r.length === 0 || t.length === 0) return false;
-  // 短い認識結果（4文字以下）は誤判定リスクが高いのでスキップ
-  if (r.length <= 4) return false;
-  // 認識テキストがTTSテキストの大部分と一致する場合のみ反響と判定
+  // 完全一致・包含一致は長さに関係なく反響と判定
   if (t === r) return true;
-  if (r.length >= 5 && t.includes(r)) return true;
-  if (r.length >= 5 && r.includes(t)) return true;
+  if (r.length >= 2 && t.includes(r)) return true;
+  if (r.length >= 2 && r.includes(t)) return true;
+  // 短い認識結果（4文字以下）はファジーマッチ不要
+  if (r.length <= 4) return false;
   // 先頭からの一致率で判定（長い文字列のみ）
   let match = 0;
   const shorter = r.length < t.length ? r : t;
@@ -918,9 +918,10 @@ function speakEchoTTS(text) {
   isTTSSpeaking = true;
   lastTTSText = cleanText;
   utter.onend = () => {
-    isTTSSpeaking = false;
     // TTS終了後しばらくは反響チェックを継続
-    ttsGuardUntil = Date.now() + 1500;
+    ttsGuardUntil = Date.now() + 2000;
+    // 音声認識の処理遅延を考慮し、フラグ解除を遅らせる
+    setTimeout(() => { isTTSSpeaking = false; }, 1000);
   };
   utter.onerror = () => { isTTSSpeaking = false; };
   try { speechSynthesis.speak(utter); } catch(e) { isTTSSpeaking = false; }
@@ -1014,10 +1015,19 @@ async function speakAizuchi(text, emotionParams, type) {
 
   const voice = getTTSVoice(s);
   if (voice) utter.voice = voice;
-  
+
+  isTTSSpeaking = true;
+  lastTTSText = cleanText;
+  utter.onend = () => {
+    ttsGuardUntil = Date.now() + 2000;
+    setTimeout(() => { isTTSSpeaking = false; }, 1000);
+  };
+  utter.onerror = () => { isTTSSpeaking = false; };
+
   try {
     speechSynthesis.speak(utter);
   } catch (e) {
+    isTTSSpeaking = false;
     console.error('TTS error:', e);
   }
 }
