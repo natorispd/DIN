@@ -450,6 +450,7 @@ function stopRecording() {
   cleaned = cleaned.trim();
   if (cleaned.length > 0 && cleaned !== lastSavedTranscript) {
     saveRecord(cleaned);
+    lastSavedTranscript = cleaned;
   }
 
   const endPhrase = getSettings().endPhrase || '記録しました';
@@ -1025,9 +1026,13 @@ function updateTimerDisplay() {
 
 // ============ STORAGE ============
 function getRecords() { return JSON.parse(localStorage.getItem('igt_records') || '[]'); }
+let lastSaveId = 0;
 function saveRecord(text) {
   const records = getRecords();
-  records.unshift({ id:Date.now(), date:new Date().toISOString(), text, duration:timerSeconds });
+  let id = Date.now();
+  if (id <= lastSaveId) id = lastSaveId + 1;
+  lastSaveId = id;
+  records.unshift({ id, date:new Date().toISOString(), text, duration:timerSeconds });
   localStorage.setItem('igt_records', JSON.stringify(records));
 }
 function deleteRecord(id) {
@@ -1320,7 +1325,7 @@ function exportAll(fmt) {
 window.addEventListener('beforeunload', () => {
   if (isRecording) {
     let cleaned = cleanTranscript(fullTranscript).trim();
-    if (cleaned.length > 0) saveRecord(cleaned);
+    if (cleaned.length > 0 && cleaned !== lastSavedTranscript) saveRecord(cleaned);
   }
 });
 
