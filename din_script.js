@@ -1,5 +1,5 @@
 // ============ VERSION ============
-const APP_VERSION = 'v2026.02.25-2300';
+const APP_VERSION = 'v2026.02.26-0020';
 
 // ============ STATE ============
 let isRecording = false;
