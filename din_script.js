@@ -1,5 +1,5 @@
 // ============ VERSION ============
-const APP_VERSION = 'v2026.02.26-0010';
+const APP_VERSION = 'v2026.02.25-2300';
 
 // ============ STATE ============
 let isRecording = false;
@@ -1588,6 +1588,20 @@ function setLang(lang) {
   const s = getSettings();
   s.lang = lang;
   localStorage.setItem('igt_settings', JSON.stringify(s));
+}
+
+// ============ SHARE ============
+function shareRecord() {
+  const r = getRecords().find(r => r.id === currentModalId);
+  if (!r) return;
+  const date = formatDate(r.date);
+  const dur = r.duration ? ` (${Math.floor(r.duration/60)}:${String(r.duration%60).padStart(2,'0')})` : '';
+  const text = `${date}${dur}\n\n${r.text}`;
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showCopyToast()).catch(() => {});
+  }
 }
 
 // ============ MODAL COPY (長押し / ダブルタップ) ============

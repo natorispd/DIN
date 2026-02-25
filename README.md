@@ -30,6 +30,6 @@ Google Chrome / Microsoft Edge
 
 [安全性について](https://github.com/natorispd/DIN/blob/main/techeasy.md)
 
-Current version: `v2026.02.26-0010`
+Current version: `v2026.02.25-2300`
 
 © 2026 Natori Satio
