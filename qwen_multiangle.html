@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Qwen Multiangle Camera</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans',sans-serif;
+  background:#111827;color:#e5e7eb;
+  min-height:100dvh;padding:20px 16px;
+}
+h1{font-size:1.15rem;font-weight:600;color:#9ca3af;margin-bottom:20px;text-align:center}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:880px;margin:0 auto}
+@media(max-width:640px){.layout{grid-template-columns:1fr}}
+
+/* Panels */
+.panel{background:#1f2937;border-radius:16px;padding:16px}
+.panel-title{font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+
+/* Azimuth dial */
+.dial-wrap{display:flex;justify-content:center;margin-bottom:12px}
+#azimuth-canvas{cursor:crosshair;touch-action:none;border-radius:50%}
+
+/* Sliders */
+.slider-row{display:flex;flex-direction:column;gap:10px}
+.slider-item label{display:flex;justify-content:space-between;font-size:.8rem;color:#9ca3af;margin-bottom:4px}
+.slider-item label span{color:#f9fafb;font-variant-numeric:tabular-nums}
+input[type=range]{
+  width:100%;accent-color:#f59e0b;height:6px;
+  background:#374151;border-radius:3px;outline:none;
+  -webkit-appearance:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:#f59e0b;cursor:pointer;
+}
+
+/* Presets */
+.preset-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.preset-grid.v{grid-template-columns:repeat(2,1fr)}
+.preset-grid.z{grid-template-columns:repeat(3,1fr)}
+.preset-btn{
+  background:#374151;border:1px solid #4b5563;color:#d1d5db;
+  font-size:.7rem;padding:6px 4px;border-radius:8px;cursor:pointer;
+  text-align:center;line-height:1.3;transition:all .1s;
+}
+.preset-btn:hover{background:#4b5563;color:#fff}
+.preset-btn.active{background:#92400e;border-color:#f59e0b;color:#fef3c7}
+
+/* Prompt output */
+.prompt-box{
+  background:#0b0f19;border-radius:10px;padding:12px;
+  font-family:'Cascadia Code','Fira Code','SF Mono',monospace;
+  font-size:.9rem;color:#6ee7b7;word-break:break-all;
+  min-height:48px;display:flex;align-items:center;gap:8px;
+  cursor:pointer;user-select:all;
+  border:1px solid #1f2937;transition:border-color .15s;
+}
+.prompt-box:hover{border-color:#4b5563}
+.prompt-copy{font-size:.7rem;color:#4b5563;white-space:nowrap}
+.prompt-copied{color:#22c55e!important}
+
+/* Image section */
+.img-section{grid-column:1/-1}
+.img-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:640px){.img-row{grid-template-columns:1fr}}
+.img-drop{
+  border:2px dashed #374151;border-radius:12px;
+  min-height:140px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;transition:border-color .15s;
+  position:relative;overflow:hidden;
+}
+.img-drop:hover{border-color:#6b7280}
+.img-drop.has-img{border-style:solid;border-color:#4b5563}
+.img-drop img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0}
+.img-drop-label{font-size:.8rem;color:#4b5563;pointer-events:none;position:relative;z-index:1}
+.img-drop-icon{font-size:1.5rem;pointer-events:none;position:relative;z-index:1}
+.img-result{border-color:#1e3a2f}
+.img-result img{object-fit:contain}
+.result-placeholder{font-size:.8rem;color:#374151}
+
+/* ComfyUI config */
+.api-row{display:flex;gap:8px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;flex:1}
+.field label{font-size:.75rem;color:#6b7280}
+.field input,.field textarea{
+  background:#0b0f19;border:1px solid #374151;border-radius:8px;
+  color:#e5e7eb;font-size:.82rem;padding:8px 10px;outline:none;
+  transition:border-color .15s;
+}
+.field input:focus,.field textarea:focus{border-color:#f59e0b}
+.field textarea{resize:vertical;min-height:56px;font-family:inherit}
+
+/* Buttons */
+.btn{
+  background:#d97706;color:#fff;border:none;border-radius:10px;
+  padding:10px 20px;font-size:.9rem;font-weight:600;cursor:pointer;
+  transition:background .15s;white-space:nowrap;
+}
+.btn:hover{background:#b45309}
+.btn:disabled{background:#374151;color:#6b7280;cursor:not-allowed}
+.btn.ghost{background:transparent;border:1px solid #374151;color:#9ca3af;font-size:.8rem;padding:8px 14px}
+.btn.ghost:hover{border-color:#6b7280;color:#e5e7eb}
+
+/* Status */
+.status-row{display:flex;align-items:center;gap:6px;font-size:.78rem;color:#6b7280;margin-top:8px;min-height:20px}
+.dot{width:7px;height:7px;border-radius:50%;background:#374151;flex-shrink:0}
+.dot.busy{background:#f59e0b;animation:pulse 1s infinite}
+.dot.ok{background:#22c55e}
+.dot.err{background:#ef4444}
+@keyframes pulse{50%{opacity:.3}}
+
+/* Info bar */
+.info-bar{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;
+  font-size:.7rem;color:#4b5563;
+}
+.info-chip{
+  background:#111827;border:1px solid #1f2937;border-radius:6px;
+  padding:2px 8px;font-variant-numeric:tabular-nums;
+}
+</style>
+</head>
+<body>
+<h1>Qwen Multiangle Camera</h1>
+
+<div class="layout">
+
+  <!-- Left: Azimuth dial -->
+  <div class="panel">
+    <div class="panel-title">Azimuth (水平方向)</div>
+    <div class="dial-wrap">
+      <canvas id="azimuth-canvas" width="180" height="180"></canvas>
+    </div>
+    <div class="info-bar" id="info-bar">
+      <span class="info-chip">Az: <b id="ib-az">0°</b></span>
+      <span class="info-chip">El: <b id="ib-el">0°</b></span>
+      <span class="info-chip">Zoom: <b id="ib-z">5.0</b></span>
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="panel-title">Azimuth Presets</div>
+      <div class="preset-grid" id="az-presets"></div>
+    </div>
+  </div>
+
+  <!-- Right: Elevation + Zoom + Prompt -->
+  <div class="panel">
+    <div class="panel-title">Elevation & Zoom</div>
+    <div class="slider-row">
+      <div class="slider-item">
+        <label>Elevation (仰角) <span id="el-val">0°</span></label>
+        <input type="range" id="el-slider" min="-30" max="60" step="1" value="0">
+      </div>
+      <div class="slider-item">
+        <label>Zoom (距離) <span id="z-val">5.0</span></label>
+        <input type="range" id="z-slider" min="0" max="10" step="0.1" value="5">
+      </div>
+    </div>
+
+    <div style="margin-top:14px">
+      <div class="panel-title">Elevation Presets</div>
+      <div class="preset-grid v" id="el-presets"></div>
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="panel-title">Zoom Presets</div>
+      <div class="preset-grid z" id="z-presets"></div>
+    </div>
+
+    <div style="margin-top:16px">
+      <div class="panel-title">Generated Prompt <span style="color:#4b5563;font-size:.7rem;font-weight:400;text-transform:none">(クリックでコピー)</span></div>
+      <div class="prompt-box" id="prompt-box" onclick="copyPrompt()">
+        <span id="prompt-text"></span>
+        <span class="prompt-copy" id="copy-hint">copy</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image generation section -->
+  <div class="panel img-section">
+    <div class="panel-title">Image Generation (ComfyUI)</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+      <div class="api-row">
+        <div class="field">
+          <label>ComfyUI URL</label>
+          <input type="text" id="comfy-url" value="http://127.0.0.1:8188" placeholder="http://127.0.0.1:8188">
+        </div>
+        <div class="field" style="flex:0 0 auto">
+          <label>LoRA strength</label>
+          <input type="number" id="lora-strength" value="1.0" min="0" max="2" step="0.05" style="width:90px">
+        </div>
+      </div>
+      <div class="field">
+        <label>Positive Prompt (追加テキスト)</label>
+        <textarea id="extra-prompt" placeholder="例: a red sports car, high quality, detailed"></textarea>
+      </div>
+    </div>
+
+    <div class="img-row">
+      <div>
+        <div class="panel-title">Input Image</div>
+        <div class="img-drop" id="input-drop" onclick="document.getElementById('file-input').click()">
+          <span class="img-drop-icon">🖼️</span>
+          <span class="img-drop-label">クリックまたはドロップ</span>
+          <img id="input-preview" src="" alt="" style="display:none">
+        </div>
+        <input type="file" id="file-input" accept="image/*" style="display:none">
+      </div>
+      <div>
+        <div class="panel-title">Output Image</div>
+        <div class="img-drop img-result" id="output-drop">
+          <span class="img-drop-icon result-placeholder">✨</span>
+          <span class="img-drop-label result-placeholder">生成結果がここに表示されます</span>
+          <img id="output-preview" src="" alt="" style="display:none">
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="gen-btn" onclick="generate()">Generate</button>
+      <button class="btn ghost" onclick="clearInput()">Clear Input</button>
+      <button class="btn ghost" onclick="saveOutput()" id="save-btn" disabled>Save Output</button>
+    </div>
+    <div class="status-row">
+      <span class="dot" id="gen-dot"></span>
+      <span id="gen-status"></span>
+    </div>
+  </div>
+
+</div><!-- /.layout -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = { azimuth: 0, elevation: 0, zoom: 5.0 };
+
+// ── Angle → Text mappings ─────────────────────────────────────────────────
+function hDirection(a) {
+  const h = ((a % 360) + 360) % 360;
+  if (h < 22.5 || h >= 337.5) return 'front view';
+  if (h < 67.5)  return 'front-right quarter view';
+  if (h < 112.5) return 'right side view';
+  if (h < 157.5) return 'back-right quarter view';
+  if (h < 202.5) return 'back view';
+  if (h < 247.5) return 'back-left quarter view';
+  if (h < 292.5) return 'left side view';
+  return 'front-left quarter view';
+}
+function vDirection(e) {
+  if (e < -15) return 'low-angle shot';
+  if (e < 15)  return 'eye-level shot';
+  if (e < 45)  return 'elevated shot';
+  return 'high-angle shot';
+}
+function distLabel(z) {
+  if (z < 2) return 'wide shot';
+  if (z < 6) return 'medium shot';
+  return 'close-up';
+}
+function buildPrompt() {
+  return `<sks> ${hDirection(state.azimuth)} ${vDirection(state.elevation)} ${distLabel(state.zoom)}`;
+}
+
+// ── Azimuth Presets ───────────────────────────────────────────────────────
+const AZ_PRESETS = [
+  { label: 'Front',    angle: 0,   short: 'F' },
+  { label: 'F-Right',  angle: 45,  short: 'FR' },
+  { label: 'R Side',   angle: 90,  short: 'R' },
+  { label: 'B-Right',  angle: 135, short: 'BR' },
+  { label: 'Back',     angle: 180, short: 'B' },
+  { label: 'B-Left',   angle: 225, short: 'BL' },
+  { label: 'L Side',   angle: 270, short: 'L' },
+  { label: 'F-Left',   angle: 315, short: 'FL' },
+];
+const EL_PRESETS = [
+  { label: 'Low angle',   value: -30 },
+  { label: 'Eye level',   value: 0 },
+  { label: 'Elevated',    value: 30 },
+  { label: 'High angle',  value: 60 },
+];
+const Z_PRESETS = [
+  { label: 'Wide',    value: 1 },
+  { label: 'Medium',  value: 4 },
+  { label: 'Close-up',value: 8 },
+];
+
+function buildPresets() {
+  const azWrap = document.getElementById('az-presets');
+  AZ_PRESETS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'preset-btn';
+    b.dataset.az = p.angle;
+    b.innerHTML = `<div style="font-size:.65rem;color:#9ca3af">${p.label}</div><div style="font-size:.6rem;color:#6b7280">${p.angle}°</div>`;
+    b.onclick = () => { state.azimuth = p.angle; update(); };
+    azWrap.appendChild(b);
+  });
+  const elWrap = document.getElementById('el-presets');
+  EL_PRESETS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'preset-btn';
+    b.dataset.el = p.value;
+    b.innerHTML = `<div>${p.label}</div><div style="font-size:.6rem;color:#6b7280">${p.value}°</div>`;
+    b.onclick = () => {
+      state.elevation = p.value;
+      document.getElementById('el-slider').value = p.value;
+      update();
+    };
+    elWrap.appendChild(b);
+  });
+  const zWrap = document.getElementById('z-presets');
+  Z_PRESETS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'preset-btn';
+    b.dataset.zp = p.value;
+    b.innerHTML = `<div>${p.label}</div>`;
+    b.onclick = () => {
+      state.zoom = p.value;
+      document.getElementById('z-slider').value = p.value;
+      update();
+    };
+    zWrap.appendChild(b);
+  });
+}
+
+// ── Azimuth Dial ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('azimuth-canvas');
+const ctx = canvas.getContext('2d');
+const CX = 90, CY = 90, R = 78;
+let dragging = false;
+
+function drawDial() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 180 * dpr; canvas.height = 180 * dpr;
+  canvas.style.width = '180px'; canvas.style.height = '180px';
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, 180, 180);
+
+  // Outer ring background
+  ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI*2);
+  ctx.strokeStyle = '#374151'; ctx.lineWidth = 18; ctx.stroke();
+
+  // Colored arc (shows direction sector)
+  const startAngle = -Math.PI/2;
+  const endAngle = startAngle + (state.azimuth * Math.PI / 180);
+  ctx.beginPath(); ctx.arc(CX, CY, R, startAngle, endAngle);
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 18;
+  ctx.lineCap = 'round'; ctx.stroke();
+
+  // Compass marks
+  ctx.lineWidth = 1;
+  [0,45,90,135,180,225,270,315].forEach(deg => {
+    const rad = (deg - 90) * Math.PI / 180;
+    const tick = deg % 90 === 0 ? 10 : 5;
+    const x1 = CX + (R+9) * Math.cos(rad);
+    const y1 = CY + (R+9) * Math.sin(rad);
+    const x2 = CX + (R+9-tick) * Math.cos(rad);
+    const y2 = CY + (R+9-tick) * Math.sin(rad);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
+    ctx.strokeStyle = deg%90===0?'#6b7280':'#374151'; ctx.stroke();
+  });
+
+  // Compass labels
+  ctx.font = 'bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const labels = {0:'N',90:'E',180:'S',270:'W'};
+  Object.entries(labels).forEach(([deg,lbl])=>{
+    const rad = (Number(deg)-90)*Math.PI/180;
+    const x = CX + (R+22)*Math.cos(rad);
+    const y = CY + (R+22)*Math.sin(rad);
+    ctx.fillStyle = Number(deg)===0?'#f59e0b':'#6b7280';
+    ctx.fillText(lbl,x,y);
+  });
+
+  // Handle dot on ring
+  const hRad = (state.azimuth - 90) * Math.PI / 180;
+  const hx = CX + R * Math.cos(hRad);
+  const hy = CY + R * Math.sin(hRad);
+  ctx.beginPath(); ctx.arc(hx, hy, 9, 0, Math.PI*2);
+  ctx.fillStyle = '#f59e0b'; ctx.fill();
+  ctx.beginPath(); ctx.arc(hx, hy, 5, 0, Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+
+  // Center: direction label
+  ctx.font = 'bold 12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle = '#f9fafb';
+  const dir = hDirection(state.azimuth).split(' ')[0];
+  ctx.fillText(dir, CX, CY-7);
+  ctx.font = '10px sans-serif'; ctx.fillStyle='#9ca3af';
+  ctx.fillText(state.azimuth+'°', CX, CY+8);
+}
+
+function angleFromPointer(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = 180 / rect.width, scaleY = 180 / rect.height;
+  const px = (e.clientX || e.touches?.[0].clientX) - rect.left;
+  const py = (e.clientY || e.touches?.[0].clientY) - rect.top;
+  const dx = px*scaleX - CX, dy = py*scaleY - CY;
+  let deg = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+  return Math.round(((deg % 360) + 360) % 360);
+}
+
+canvas.addEventListener('mousedown', e=>{dragging=true; state.azimuth=angleFromPointer(e); update();});
+canvas.addEventListener('mousemove', e=>{if(dragging){state.azimuth=angleFromPointer(e); update();}});
+canvas.addEventListener('mouseup', ()=>dragging=false);
+canvas.addEventListener('mouseleave', ()=>dragging=false);
+canvas.addEventListener('touchstart', e=>{e.preventDefault();dragging=true;state.azimuth=angleFromPointer(e);update();},{passive:false});
+canvas.addEventListener('touchmove', e=>{e.preventDefault();if(dragging){state.azimuth=angleFromPointer(e);update();}},{passive:false});
+canvas.addEventListener('touchend', ()=>dragging=false);
+
+// ── Sliders ───────────────────────────────────────────────────────────────
+document.getElementById('el-slider').addEventListener('input', e=>{
+  state.elevation = Number(e.target.value); update();
+});
+document.getElementById('z-slider').addEventListener('input', e=>{
+  state.zoom = Number(e.target.value); update();
+});
+
+// ── Update all UI ─────────────────────────────────────────────────────────
+function update() {
+  drawDial();
+  document.getElementById('el-val').textContent = state.elevation+'°';
+  document.getElementById('z-val').textContent = state.zoom.toFixed(1);
+  document.getElementById('ib-az').textContent = state.azimuth+'°';
+  document.getElementById('ib-el').textContent = state.elevation+'°';
+  document.getElementById('ib-z').textContent = state.zoom.toFixed(1);
+  document.getElementById('prompt-text').textContent = buildPrompt();
+
+  // Sync preset button active states
+  document.querySelectorAll('#az-presets .preset-btn').forEach(b=>{
+    b.classList.toggle('active', Number(b.dataset.az)===state.azimuth);
+  });
+  document.querySelectorAll('#el-presets .preset-btn').forEach(b=>{
+    b.classList.toggle('active', Number(b.dataset.el)===state.elevation);
+  });
+  document.querySelectorAll('#z-presets .preset-btn').forEach(b=>{
+    b.classList.toggle('active', Number(b.dataset.zp)===state.zoom);
+  });
+}
+
+// ── Copy prompt ───────────────────────────────────────────────────────────
+function copyPrompt() {
+  const txt = buildPrompt();
+  navigator.clipboard.writeText(txt).then(()=>{
+    const hint = document.getElementById('copy-hint');
+    hint.textContent = '✓ copied'; hint.classList.add('prompt-copied');
+    setTimeout(()=>{hint.textContent='copy';hint.classList.remove('prompt-copied');},1500);
+  });
+}
+
+// ── Image drop / upload ───────────────────────────────────────────────────
+let inputImageBase64 = null;
+
+document.getElementById('file-input').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  loadImageFile(f);
+});
+const inputDrop = document.getElementById('input-drop');
+inputDrop.addEventListener('dragover', e=>{e.preventDefault();inputDrop.style.borderColor='#f59e0b';});
+inputDrop.addEventListener('dragleave', ()=>{inputDrop.style.borderColor='';});
+inputDrop.addEventListener('drop', e=>{
+  e.preventDefault(); inputDrop.style.borderColor='';
+  const f = e.dataTransfer.files[0]; if(f) loadImageFile(f);
+});
+
+function loadImageFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    const b64 = ev.target.result; // data:image/...;base64,...
+    inputImageBase64 = b64.split(',')[1];
+    const prev = document.getElementById('input-preview');
+    prev.src = b64; prev.style.display='block';
+    const lbl = inputDrop.querySelector('.img-drop-label');
+    const icon = inputDrop.querySelector('.img-drop-icon');
+    if(lbl) lbl.style.display='none'; if(icon) icon.style.display='none';
+    inputDrop.classList.add('has-img');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearInput() {
+  inputImageBase64 = null;
+  const prev = document.getElementById('input-preview');
+  prev.src=''; prev.style.display='none';
+  const lbl = inputDrop.querySelector('.img-drop-label');
+  const icon = inputDrop.querySelector('.img-drop-icon');
+  if(lbl) lbl.style.display=''; if(icon) icon.style.display='';
+  inputDrop.classList.remove('has-img');
+  document.getElementById('file-input').value='';
+}
+
+// ── ComfyUI API helpers ───────────────────────────────────────────────────
+function setStatus(msg, state='') {
+  const dot = document.getElementById('gen-dot');
+  const txt = document.getElementById('gen-status');
+  txt.textContent = msg;
+  dot.className = 'dot' + (state ? ' '+state : '');
+}
+
+async function uploadImageToComfy(base64, url) {
+  const blob = await (await fetch('data:image/png;base64,'+base64)).blob();
+  const form = new FormData();
+  form.append('image', blob, 'input.png');
+  const r = await fetch(url+'/upload/image', {method:'POST', body:form});
+  if(!r.ok) throw new Error('Upload failed: '+r.status);
+  const j = await r.json();
+  return j.name; // filename on server
+}
+
+async function queuePrompt(workflow, url) {
+  const r = await fetch(url+'/prompt', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({prompt: workflow})
+  });
+  if(!r.ok) throw new Error('Queue failed: '+r.status);
+  return (await r.json()).prompt_id;
+}
+
+async function pollHistory(promptId, url, timeoutMs=120000) {
+  const start = Date.now();
+  while(Date.now()-start < timeoutMs) {
+    const r = await fetch(url+'/history/'+promptId);
+    if(r.ok) {
+      const h = await r.json();
+      if(h[promptId]?.status?.completed) return h[promptId];
+    }
+    await new Promise(res=>setTimeout(res,1500));
+  }
+  throw new Error('Timeout waiting for result');
+}
+
+function buildWorkflow(imageFilename, anglePrompt, extraPrompt, loraStrength) {
+  // Minimal ComfyUI workflow for Qwen2.5-VL-7B-Instruct + MultipleAngles-LoRA
+  // Node IDs are arbitrary but must be consistent
+  const fullPrompt = [anglePrompt, extraPrompt].filter(Boolean).join(', ');
+  return {
+    "1": {
+      "class_type": "CheckpointLoaderSimple",
+      "inputs": { "ckpt_name": "Qwen2.5-VL-7B-Instruct-GGUF.gguf" }
+    },
+    "2": {
+      "class_type": "LoraLoader",
+      "inputs": {
+        "model": ["1", 0],
+        "clip": ["1", 1],
+        "lora_name": "Qwen-Image-Edit-2511-Multiple-Angles-LoRA.safetensors",
+        "strength_model": loraStrength,
+        "strength_clip": loraStrength
+      }
+    },
+    "3": {
+      "class_type": "CLIPTextEncode",
+      "inputs": { "text": fullPrompt, "clip": ["2", 1] }
+    },
+    "4": {
+      "class_type": "CLIPTextEncode",
+      "inputs": { "text": "blurry, low quality", "clip": ["2", 1] }
+    },
+    "5": {
+      "class_type": "LoadImage",
+      "inputs": { "image": imageFilename }
+    },
+    "6": {
+      "class_type": "KSampler",
+      "inputs": {
+        "model": ["2", 0],
+        "positive": ["3", 0],
+        "negative": ["4", 0],
+        "latent_image": ["7", 0],
+        "seed": Math.floor(Math.random()*1e9),
+        "steps": 20, "cfg": 7,
+        "sampler_name": "euler", "scheduler": "normal",
+        "denoise": 0.75
+      }
+    },
+    "7": {
+      "class_type": "VAEEncodeForInpaint",
+      "inputs": { "pixels": ["5", 0], "vae": ["1", 2], "grow_mask_by": 0 }
+    },
+    "8": {
+      "class_type": "VAEDecode",
+      "inputs": { "samples": ["6", 0], "vae": ["1", 2] }
+    },
+    "9": {
+      "class_type": "SaveImage",
+      "inputs": { "images": ["8", 0], "filename_prefix": "qwen_multiangle" }
+    }
+  };
+}
+
+async function generate() {
+  if(!inputImageBase64) { setStatus('入力画像をセットしてください', 'err'); return; }
+  const url = document.getElementById('comfy-url').value.replace(/\/$/,'');
+  const extra = document.getElementById('extra-prompt').value.trim();
+  const lora = parseFloat(document.getElementById('lora-strength').value) || 1.0;
+  const angle = buildPrompt();
+
+  document.getElementById('gen-btn').disabled = true;
+  document.getElementById('save-btn').disabled = true;
+
+  try {
+    setStatus('画像をアップロード中…', 'busy');
+    const fname = await uploadImageToComfy(inputImageBase64, url);
+
+    setStatus('ワークフローをキュー中…', 'busy');
+    const wf = buildWorkflow(fname, angle, extra, lora);
+    const promptId = await queuePrompt(wf, url);
+
+    setStatus('生成中… ('+promptId.slice(0,8)+')', 'busy');
+    const result = await pollHistory(promptId, url);
+
+    // Extract output image
+    const outputs = result.outputs;
+    const saveNode = Object.values(outputs).find(o=>o.images);
+    if(!saveNode) throw new Error('出力画像が見つかりません');
+    const imgInfo = saveNode.images[0];
+    const imgUrl = url+'/view?filename='+encodeURIComponent(imgInfo.filename)
+      +(imgInfo.subfolder?'&subfolder='+encodeURIComponent(imgInfo.subfolder):'')
+      +'&type='+(imgInfo.type||'output');
+
+    const outPrev = document.getElementById('output-preview');
+    outPrev.src = imgUrl; outPrev.style.display='block';
+    document.querySelectorAll('#output-drop .result-placeholder').forEach(el=>el.style.display='none');
+    document.getElementById('output-drop').classList.add('has-img');
+    document.getElementById('save-btn').disabled = false;
+    setStatus('完了！', 'ok');
+  } catch(e) {
+    setStatus(e.message, 'err');
+  } finally {
+    document.getElementById('gen-btn').disabled = false;
+  }
+}
+
+function saveOutput() {
+  const src = document.getElementById('output-preview').src;
+  if(!src) return;
+  const a = document.createElement('a');
+  a.href = src; a.download = 'qwen_multiangle_output.png';
+  a.click();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+buildPresets();
+update();
+</script>
+</body>
+</html>
